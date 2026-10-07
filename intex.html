@@ -1,0 +1,577 @@
+<title>Mission Confiance 1MCVA</title>
+<meta name="author" content="Marie Frison">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout : plateau de jeu télé. Bandeau (logo + chrono) / piste des 9 missions + barre de progression / scène colorée par mission + scores en étiquettes prix. Univers sombre assumé (projection). */
+:root{
+  color-scheme:dark;
+  --bg:#130F2E; --bg2:#1C1745; --card:#241E57; --card2:#2E2768; --ink:#FFFFFF; --muted:#BDB6E8; --line:#3D347C;
+  --tag:#FFD23F; --on-tag:#130F2E; --pink:#FF4F8B; --cyan:#2ED8F0; --lime:#8BE36B; --orange:#FF9142; --violet:#B194FF;
+  --go:#3DDC97; --stop:#FF6363; --sc:var(--tag);
+  --f-show:"Lilita One","Bricolage Grotesque","Arial Black",sans-serif;
+  --f-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --r:16px;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{background:var(--bg);background-image:radial-gradient(circle at 15% -10%,rgba(255,79,139,.28),transparent 45%),radial-gradient(circle at 90% 0%,rgba(46,216,240,.22),transparent 40%),radial-gradient(rgba(255,255,255,.06) 1px,transparent 1.5px);background-size:auto,auto,22px 22px;background-attachment:fixed;color:var(--ink);font-family:var(--f-body);font-size:18px;line-height:1.5;padding-inline:16px;padding-block:0 32px;min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
+h1,h2,h3{font-family:var(--f-show);font-weight:400;text-wrap:balance;margin:0;line-height:1.05;letter-spacing:.01em}
+.wrap{max-width:1320px;margin:0 auto}
+
+/* Bandeau */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding-block:18px 14px}
+.brand{display:flex;align-items:center;gap:14px;background:none;border:0;padding:0;text-align:left}
+.logo{width:58px;height:58px;flex:0 0 auto;border-radius:16px;background:var(--tag);color:var(--on-tag);display:grid;place-items:center;font-size:32px;transform:rotate(-6deg);box-shadow:4px 4px 0 var(--pink)}
+.brand h1{font-size:clamp(28px,4vw,44px);text-shadow:3px 3px 0 var(--pink)}
+.brand h1 span{color:var(--tag)}
+.brand small{display:block;color:var(--muted);font-size:14px;letter-spacing:.05em}
+.brand small b{color:var(--cyan)}
+.timer{display:flex;align-items:center;gap:8px;background:var(--card);border:3px solid var(--cyan);border-radius:999px;padding:6px 8px 6px 20px;box-shadow:0 0 24px rgba(46,216,240,.35)}
+.timer .t{font-family:var(--f-show);font-size:34px;font-variant-numeric:tabular-nums;min-width:4.3ch;color:var(--cyan)}
+.timer.low{border-color:var(--orange)} .timer.low .t{color:var(--orange)}
+.timer.done{border-color:var(--stop);animation:shake .5s 4}
+.timer.done .t{color:var(--stop)}
+@keyframes shake{25%{transform:translateX(-4px) rotate(-1deg)}75%{transform:translateX(4px) rotate(1deg)}}
+.icon-btn{border:0;background:var(--card2);border-radius:999px;height:44px;min-width:44px;padding:0 14px;font-weight:700;font-size:18px}
+.icon-btn:hover{background:var(--line)}
+
+/* Piste des missions */
+.steps{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:thin}
+.step{--c:var(--tag);flex:0 0 auto;display:flex;align-items:center;gap:10px;border:2px solid var(--line);background:var(--bg2);border-radius:14px;padding:8px 14px 8px 8px;text-align:left;transition:transform .15s}
+.step:hover{transform:translateY(-2px);border-color:var(--c)}
+.step .ic{width:38px;height:38px;border-radius:10px;background:var(--card2);display:grid;place-items:center;font-size:20px}
+.step b{display:block;font-size:15px;line-height:1.2}
+.step em{font-style:normal;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.step.on{background:var(--c);border-color:var(--c);color:var(--on-tag);box-shadow:0 6px 0 rgba(0,0,0,.35)}
+.step.on .ic{background:rgba(19,15,46,.15)}
+.step.on em{color:var(--on-tag);opacity:.75}
+.step.done .ic{background:var(--go);color:var(--on-tag)}
+.progress{height:10px;border-radius:99px;background:var(--bg2);overflow:hidden;margin:2px 0 20px;border:1px solid var(--line)}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--orange),var(--tag),var(--lime),var(--cyan));transition:width .6s cubic-bezier(.2,.9,.3,1.2)}
+
+/* Grille principale */
+.main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+@media (max-width:960px){.main{grid-template-columns:minmax(0,1fr)}}
+.stage{background:var(--card);border:3px solid var(--sc);border-radius:24px;padding:clamp(18px,3vw,38px);min-width:0;box-shadow:10px 10px 0 color-mix(in srgb,var(--sc) 45%,transparent);animation:enter .45s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes enter{from{transform:translateY(14px) scale(.98)}to{transform:none}}
+.st-head{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.badge{width:84px;height:84px;flex:0 0 auto;border-radius:22px;background:var(--sc);display:grid;place-items:center;font-size:46px;transform:rotate(-5deg);box-shadow:5px 5px 0 rgba(0,0,0,.35)}
+.eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--sc);font-weight:700;margin-bottom:4px}
+.stage h2{font-size:clamp(32px,4.4vw,56px)}
+.lead{font-size:19px;color:var(--muted);max-width:64ch;margin:10px 0 20px}
+.goal{display:inline-flex;gap:8px;align-items:center;background:rgba(255,255,255,.08);border:1px dashed var(--sc);border-radius:999px;padding:5px 14px;font-size:15px;font-weight:700;margin-top:10px}
+.goal::before{content:"🎯"}
+
+/* Carte question */
+.card{background:var(--bg2);border:2px solid var(--line);border-radius:var(--r);padding:clamp(18px,2.6vw,30px);display:flex;flex-direction:column;gap:18px}
+.q{font-family:var(--f-display);font-weight:800;font-size:clamp(23px,2.9vw,34px);line-height:1.2}
+.counter{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{border:0;background:var(--card2);border-radius:12px;padding:12px 20px;font-weight:700;box-shadow:0 5px 0 rgba(0,0,0,.4);transition:transform .08s,box-shadow .08s}
+.btn:hover{filter:brightness(1.15)}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.4)}
+.btn.primary{background:var(--cyan);color:var(--on-tag)}
+.btn.yellow{background:var(--tag);color:var(--on-tag);font-size:19px}
+.btn.ghost{background:transparent;border:2px solid var(--line);box-shadow:none}
+.btn[disabled]{opacity:.35;cursor:default;transform:none}
+.answer{border-radius:14px;padding:16px 20px;font-size:19px;animation:pop .5s cubic-bezier(.2,.9,.3,1.4)}
+.answer.ok{background:rgba(61,220,151,.16);border:3px solid var(--go)}
+.answer.no{background:rgba(255,99,99,.14);border:3px solid var(--stop)}
+.answer strong{font-family:var(--f-show);font-weight:400;font-size:40px;display:block;line-height:1}
+.answer.ok strong{color:var(--go)} .answer.no strong{color:var(--stop)}
+@keyframes pop{0%{transform:scale(.6) rotate(-3deg);opacity:0}100%{transform:none;opacity:1}}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:14px;align-items:center;border:2px solid var(--line);background:var(--card);border-radius:14px;padding:12px 16px;font-size:19px;transition:opacity .3s}
+.opt .k{flex:0 0 auto;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-family:var(--f-show);font-size:22px;color:var(--on-tag)}
+.opt:nth-child(1) .k{background:var(--pink)} .opt:nth-child(2) .k{background:var(--cyan)} .opt:nth-child(3) .k{background:var(--tag)} .opt:nth-child(4) .k{background:var(--lime)}
+.opt.good{border-color:var(--go);background:rgba(61,220,151,.16);animation:pop .5s cubic-bezier(.2,.9,.3,1.4)}
+.opt.good::after{content:"✔";margin-left:auto;color:var(--go);font-size:28px;font-weight:700}
+.opt.bad{opacity:.35}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:640px){.pair{grid-template-columns:1fr}}
+.say{border-radius:14px;padding:18px 20px;font-size:22px;font-weight:800;font-family:var(--f-display)}
+.say small{display:block;font-family:var(--f-body);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.say.bad{background:rgba(255,99,99,.14);border:3px solid var(--stop);text-decoration:line-through;text-decoration-color:rgba(255,99,99,.7)} .say.bad small{color:var(--stop);text-decoration:none}
+.say.good{background:rgba(61,220,151,.16);border:3px solid var(--go);animation:pop .5s cubic-bezier(.2,.9,.3,1.4)} .say.good small{color:var(--go)}
+.say.hide{color:var(--muted);font-weight:600;font-size:18px;display:grid;place-items:center;min-height:96px;border:3px dashed var(--line)}
+.why{color:var(--muted);font-size:17px;margin:0}
+
+/* Points */
+.award{border-top:2px dashed var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.award-l{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--tag);font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:3px solid var(--c);background:transparent;border-radius:999px;padding:7px 16px;font-weight:700;font-size:16px;transition:transform .1s}
+.chip:hover{transform:scale(1.05)}
+.chip.on{background:var(--c);color:var(--on-tag)}
+.seg{display:inline-flex;border:2px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{border:0;background:var(--card);padding:8px 14px;font-weight:700}
+.seg button.on{background:var(--tag);color:var(--on-tag)}
+
+/* Météo */
+.meteo{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.meteo{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.wx{border:2px solid var(--line);background:var(--bg2);border-radius:var(--r);padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;transition:transform .15s}
+.wx:hover{transform:translateY(-4px) rotate(-1deg);border-color:var(--sc)}
+.wx:active{transform:scale(.95)}
+.wx .e{font-size:48px;line-height:1}
+.wx b{font-size:16px}
+.wx span{font-size:13px;color:var(--muted);text-align:center}
+.wx .n{font-family:var(--f-show);font-size:34px;color:var(--sc);font-variant-numeric:tabular-nums}
+.icebreak{margin-top:22px}
+
+/* Scène */
+.scene-card{border:3px solid var(--sc);border-radius:var(--r);overflow:hidden;animation:pop .5s cubic-bezier(.2,.9,.3,1.3)}
+.scene-head{background:var(--sc);color:var(--on-tag);padding:16px 22px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.scene-head h3{font-size:clamp(26px,3vw,36px)}
+.scene-head span{font-size:15px;font-weight:700}
+.scene-body{padding:18px 22px;display:grid;gap:14px;background:var(--bg2)}
+.role{border-radius:12px;padding:12px 16px;background:var(--card);font-size:19px}
+.role small{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--cyan)}
+.role.secret{background:var(--tag);color:var(--on-tag)}
+.role.secret small{color:var(--on-tag);opacity:.7}
+.grid-obs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:640px){.grid-obs{grid-template-columns:1fr}}
+.grid-obs label{display:flex;gap:10px;align-items:center;border:2px solid var(--line);border-radius:12px;padding:9px 12px;cursor:pointer;background:var(--card)}
+.grid-obs label:has(input:checked){border-color:var(--go);background:rgba(61,220,151,.14)}
+.grid-obs input{width:22px;height:22px;accent-color:var(--go)}
+.deck{display:flex;flex-wrap:wrap;gap:6px}
+.deck i{width:18px;height:26px;border-radius:4px;background:var(--card2);border:2px solid var(--line)}
+.deck i.used{background:var(--sc);border-color:var(--sc)}
+
+/* Scores */
+.side{display:flex;flex-direction:column;gap:12px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.side h3{font-size:26px;color:var(--tag)}
+.board{display:flex;flex-direction:column;gap:10px}
+.tagrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;background:var(--card);border:2px solid var(--line);border-left:10px solid var(--c);border-radius:14px;padding:10px 10px 10px 12px}
+.tagrow.lead1{border-color:var(--tag);border-left-color:var(--c);box-shadow:0 0 22px rgba(255,210,63,.3)}
+.rk{font-family:var(--f-show);font-size:20px;color:var(--muted);width:24px;text-align:center}
+.lead1 .rk{color:var(--tag)}
+.tagrow .nm{font-weight:700;overflow-wrap:anywhere;line-height:1.2}
+.price{position:relative;background:var(--tag);color:var(--on-tag);font-family:var(--f-show);font-size:30px;font-variant-numeric:tabular-nums;padding:2px 12px 0 24px;clip-path:polygon(13px 0,100% 0,100% 100%,13px 100%,0 50%);min-width:70px;text-align:right}
+.price::before{content:"";position:absolute;left:10px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--card)}
+.price.bump{animation:bump .6s cubic-bezier(.2,.9,.3,1.6)}
+@keyframes bump{40%{transform:scale(1.35) rotate(-4deg)}}
+.adj{grid-column:1/-1;display:flex;gap:6px}
+.adj button{flex:1;border:0;background:var(--card2);border-radius:8px;padding:3px 0;font-weight:700}
+.adj button:hover{background:var(--line)}
+.note{font-size:14px;color:var(--muted);margin:0}
+.credit{font-size:14px;color:var(--muted);text-align:center;padding:12px;border:1px dashed var(--line);border-radius:12px}
+.credit b{color:var(--ink)}
+
+/* Équipes */
+.teams-edit{display:grid;gap:10px;max-width:580px}
+.team-in{display:flex;gap:10px;align-items:center}
+.team-in i{width:22px;height:22px;border-radius:50%;background:var(--c);flex:0 0 auto;box-shadow:0 0 12px var(--c)}
+.team-in input{flex:1;min-width:0;font:inherit;font-weight:700;border:2px solid var(--line);background:var(--bg2);color:var(--ink);border-radius:12px;padding:10px 14px}
+.team-in input:focus{border-color:var(--c)}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:24px}
+.rule{background:var(--bg2);border-radius:var(--r);padding:16px 18px;border-top:5px solid var(--c)}
+.rule b{font-family:var(--f-show);font-weight:400;font-size:22px;display:block;margin-bottom:4px}
+
+/* Bilan */
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:14px;margin:16px 0 28px;flex-wrap:wrap}
+.pod{display:flex;flex-direction:column;align-items:center;gap:8px;width:160px}
+.pod .crown{font-size:40px;animation:float 2s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-6px)}}
+.pod .bar{width:100%;background:var(--c);border-radius:14px 14px 0 0;display:grid;place-items:start center;padding-top:10px;color:var(--on-tag);font-family:var(--f-show);font-size:40px;animation:grow .9s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes grow{from{height:0!important}}
+.pod b{text-align:center;overflow-wrap:anywhere}
+.cmp{display:grid;gap:8px;max-width:660px}
+.cmp-row{display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center;font-size:15px}
+.cmp-bar{height:18px;border-radius:6px;background:var(--bg2);overflow:hidden}
+.cmp-bar i{display:block;height:100%;background:var(--muted)}
+.cmp-bar.end i{background:var(--cyan)}
+.starters{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.starter{border:3px dashed var(--sc);border-radius:var(--r);padding:18px;font-family:var(--f-display);font-weight:800;font-size:21px}
+.skills{display:flex;flex-wrap:wrap;gap:8px}
+.skill{border:2px solid var(--lime);border-radius:999px;padding:7px 16px;background:transparent;font-weight:700}
+.skill:hover{background:rgba(139,227,107,.15)}
+.skill .c{font-variant-numeric:tabular-nums;color:var(--lime);margin-left:8px}
+.section{margin-top:30px;display:flex;flex-direction:column;gap:12px}
+.section h3{font-size:28px}
+.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:28px;padding-top:18px;border-top:2px dashed var(--line)}
+
+/* Écran d'accueil */
+.splash{position:fixed;inset:0;z-index:50;background:var(--bg);background-image:radial-gradient(circle at 50% 30%,rgba(255,210,63,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(255,79,139,.25),transparent 45%),radial-gradient(circle at 90% 85%,rgba(46,216,240,.22),transparent 45%);overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 24px) 16px calc(env(safe-area-inset-bottom,0px) + 24px)}
+.splash-in{max-width:980px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
+.splash .kicker{display:inline-block;background:var(--pink);color:#fff;font-weight:700;border-radius:999px;padding:6px 16px;letter-spacing:.08em;text-transform:uppercase;font-size:14px;transform:rotate(-2deg)}
+.big{font-family:var(--f-show);font-size:clamp(52px,11vw,132px);line-height:.92;margin:0}
+.big span{display:inline-block;animation:drop .7s cubic-bezier(.2,.9,.3,1.4) backwards}
+.big .l1{color:#fff;text-shadow:6px 6px 0 var(--pink)}
+.big .l2{color:var(--tag);text-shadow:6px 6px 0 #6A3CF0}
+@keyframes drop{from{transform:translateY(-60px) rotate(-8deg);opacity:0}}
+.splash p.sub{font-size:clamp(18px,2.2vw,22px);color:var(--muted);max-width:52ch;margin:0}
+.by{display:flex;align-items:center;gap:12px;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:8px 20px 8px 8px}
+.by .av{width:42px;height:42px;border-radius:50%;background:var(--cyan);color:var(--on-tag);display:grid;place-items:center;font-family:var(--f-show);font-size:20px}
+.by span{font-size:15px;color:var(--muted);text-align:left;line-height:1.25}
+.by b{color:#fff;font-size:18px;display:block}
+.go-btn{font-family:var(--f-show);font-size:clamp(26px,3.4vw,36px);background:var(--tag);color:var(--on-tag);border:0;border-radius:20px;padding:16px 40px;box-shadow:0 8px 0 #B88F00,0 0 40px rgba(255,210,63,.45);animation:breathe 2.2s ease-in-out infinite}
+.go-btn:active{transform:translateY(6px);box-shadow:0 2px 0 #B88F00}
+@keyframes breathe{50%{transform:scale(1.05)}}
+.map{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;width:100%}
+.mtile{--c:var(--tag);background:var(--card);border:2px solid var(--line);border-bottom:6px solid var(--c);border-radius:14px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.mtile .e{font-size:30px}
+.mtile b{font-size:15px;line-height:1.2}
+.mtile em{font-style:normal;color:var(--muted);font-size:13px}
+
+/* Consignes */
+.intro{font-size:18px;color:var(--muted);margin:12px 0 0;max-width:68ch}
+.consigne{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 28px;background:rgba(255,255,255,.06);border:3px solid var(--sc);border-radius:18px;padding:18px 22px;margin:14px 0 24px}
+.consigne.solo{grid-template-columns:minmax(0,1fr)}
+.consigne h4{grid-column:1/-1;margin:0;font-family:var(--f-show);font-weight:400;font-size:24px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink)}
+.consigne ol{margin:0;padding:0;list-style:none;display:grid;gap:10px;counter-reset:st;min-width:0}
+.consigne li{counter-increment:st;display:flex;gap:12px;align-items:flex-start;font-size:20px;line-height:1.35}
+.consigne li::before{content:counter(st);flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:var(--sc);color:var(--on-tag);display:grid;place-items:center;font-weight:700;font-size:17px}
+.cons-side{display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-width:190px}
+.cons-side .lab{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.pcards{display:flex;gap:6px;flex-wrap:wrap;max-width:300px}
+.pcard{min-width:46px;height:58px;padding:0 10px;border-radius:8px;display:grid;place-items:center;color:#fff;font-family:var(--f-show);font-weight:400;font-size:24px;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.pts-chip{background:var(--tag);color:var(--on-tag);font-weight:700;border-radius:999px;padding:5px 14px;font-size:16px}
+@media (max-width:760px){.consigne{grid-template-columns:minmax(0,1fr)}}
+.rules-in{gap:20px}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;width:100%;text-align:left}
+.rcard{background:var(--card);border-radius:16px;padding:16px 18px;border-top:6px solid var(--c)}
+.rcard b{display:block;font-family:var(--f-show);font-weight:400;font-size:24px;text-transform:uppercase;margin-bottom:4px;color:var(--c)}
+.rcard span{font-size:17px;line-height:1.4}
+.howto{width:100%;text-align:left;background:var(--card);border-radius:16px;padding:16px 20px;display:grid;gap:10px}
+.howto ol{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:h}
+.howto li{counter-increment:h;display:flex;gap:10px;align-items:flex-start;font-size:17px}
+.howto li::before{content:counter(h);flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--tag);color:var(--on-tag);display:grid;place-items:center;font-weight:700}
+.rules-btn{font-weight:700}
+#rulescards .pcards{max-width:none}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:60}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <button class="brand" id="home" aria-label="Revenir à l'écran d'accueil"><span class="logo" aria-hidden="true">🚀</span><span><h1>Mission <span>Confiance</span></h1><small>Parcours de soutien · 1MCVA · par <b>Marie Frison</b></small></span></button>
+    <div class="row"><button class="icon-btn rules-btn" id="showrules" style="background:var(--card);border:2px solid var(--line)">? Règles</button><div class="timer" id="timer" aria-live="polite">
+      <span class="t" id="tval">00:00</span>
+      <button class="icon-btn" id="tplay" aria-label="Lancer le chrono">▶</button>
+      <button class="icon-btn" id="treset" aria-label="Remettre le chrono à la durée de l'activité">↺</button>
+    </div></div>
+  </header>
+  <nav class="steps" id="steps" aria-label="Activités"></nav>
+  <div class="progress" aria-hidden="true"><i id="prog"></i></div>
+  <div class="main">
+    <main class="stage" id="stage"></main>
+    <aside class="side">
+      <h3>Tableau des scores</h3>
+      <div class="board" id="board"></div>
+      <p class="note">Les points se donnent dans chaque activité. Les boutons −1 / +1 / +2 servent aux bonus (entraide, courage, fair-play).</p>
+      <div class="credit">Jeu conçu par <b>Marie Frison</b><br>Bac Pro MCV · 1MCVA</div>
+    </aside>
+  </div>
+</div>
+
+<div class="splash" id="splash" hidden>
+  <div class="splash-in">
+    <span class="kicker">Parcours de soutien · 1MCVA</span>
+    <h2 class="big"><span class="l1" style="animation-delay:.05s">MISSION</span><br><span class="l2" style="animation-delay:.25s">CONFIANCE</span></h2>
+    <p class="sub">1 heure, 9 défis, des points à gagner en équipe. Objectif : oser parler aux clients, prendre confiance et révéler tes soft skills.</p>
+    <div class="by"><span class="av" aria-hidden="true">MF</span><span>Un jeu conçu par<b>Marie Frison</b></span></div>
+    <button class="go-btn" id="startgame">Lancer la mission !</button>
+    <div class="map" id="map"></div>
+  </div>
+</div>
+<div class="splash" id="rules" hidden>
+  <div class="splash-in rules-in">
+    <span class="kicker">Avant de commencer</span>
+    <h2 class="big" style="font-size:clamp(44px,8vw,104px)"><span class="l2" style="color:var(--tag)">Comment on joue ?</span></h2>
+    <div class="rgrid"><div class="rcard" style="--c:var(--tag)"><b>Les équipes</b><span>4 élèves par équipe. Vos points s'affichent à droite, sur des étiquettes prix.</span></div><div class="rcard" style="--c:var(--cyan)"><b>On répond ensemble</b><span>On se concerte à voix basse. Le porte-parole change à chaque question.</span></div><div class="rcard" style="--c:var(--pink)"><b>Les points</b><span>+1 pour une bonne réponse, +2 pour une très bonne idée, des bonus pour le courage.</span></div><div class="rcard" style="--c:var(--lime)"><b>Les règles d'or</b><span>On a le droit de se tromper. Personne ne se moque. Un point fort, puis un conseil.</span></div></div>
+    <div class="howto"><b>À chaque activité :</b><ol><li>Lisez l'encadré « Ce que vous devez faire » en haut de l'écran.</li><li>Concertez-vous en équipe avant le chrono.</li><li>Répondez avec vos cartons ou par votre porte-parole.</li><li>Le professeur donne les points.</li></ol></div>
+    <div class="row" style="justify-content:center"><b>Vos cartons :</b><span id="rulescards"></span></div>
+    <button class="go-btn" id="rulesgo">C'est parti !</button>
+  </div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<script>
+const COL=["#4F8BFF","#FF4F8B","#3DDC97","#FFB020","#B194FF","#2ED8F0"];
+const STATIONS=[
+ {id:"prep",t:"Équipes",min:2,ic:"🚀",c:"#FFD23F"},
+ {id:"meteo",t:"Météo intérieure",min:4,ic:"⛅",c:"#2ED8F0"},
+ {id:"vf",t:"Vrai ou faux ?",min:8,ic:"⚡",c:"#FF4F8B"},
+ {id:"att",t:"Quelle attitude ?",min:6,ic:"🧍",c:"#FF9142"},
+ {id:"soft",t:"Soft skills",min:8,ic:"💡",c:"#8BE36B"},
+ {id:"form",t:"Formules gagnantes",min:8,ic:"💬",c:"#B194FF"},
+ {id:"scene",t:"Défi en scène",min:15,ic:"🎭",c:"#FF6B8E"},
+ {id:"micro",t:"Micro du magasin",min:5,ic:"🎤",c:"#2ED8F0"},
+ {id:"bilan",t:"Bilan",min:4,ic:"🏆",c:"#FFD23F"}
+];
+const WX=[
+ {e:"☀️",n:"Grand soleil",d:"J'ose aborder n'importe qui"},
+ {e:"🌤️",n:"Éclaircies",d:"Ça va, avec un peu de trac"},
+ {e:"☁️",n:"Nuageux",d:"Je préfère qu'on vienne me voir"},
+ {e:"🌧️",n:"Pluie",d:"Parler au client me stresse"},
+ {e:"⛈️",n:"Orage",d:"Je l'évite à tout prix"}
+];
+const ICE=[
+ "Raconte un moment où tu as été fier(e) de toi.",
+ "Qu'est-ce qui te stresse le plus face à un client ?",
+ "Un vendeur t'a marqué, en bien ou en mal : qu'a-t-il fait ?",
+ "Quelle qualité tes amis te reconnaissent-ils ?",
+ "Ton plus gros trac… et comment tu t'en es sorti(e).",
+ "Si tu étais un produit en rayon, lequel serais-tu, et pourquoi ?",
+ "Une chose que tu as réussie en PFMP (ou ailleurs) et dont personne ne t'a parlé.",
+ "Qu'est-ce qui te donne de l'énergie avant une journée difficile ?"
+];
+const VF=[
+ {q:"La confiance en soi, c'est inné : on l'a ou on ne l'a pas.",a:false,w:"La confiance se travaille comme un muscle : par l'entraînement, la préparation et les petites réussites qu'on remarque."},
+ {q:"Un client se fait une première impression du vendeur en quelques secondes.",a:true,w:"C'est la règle des 4×20 : les 20 premières secondes, les 20 premiers mots, les 20 premiers pas, les 20 cm du visage (regard, sourire)."},
+ {q:"Avoir le trac avant d'aborder un client prouve qu'on n'est pas fait pour la vente.",a:false,w:"Le trac est normal, même chez les vendeurs expérimentés. Il montre que tu veux bien faire. On le canalise par la respiration et la préparation."},
+ {q:"Croiser les bras rassure le client parce qu'on a l'air calme.",a:false,w:"Les bras croisés envoient un message de fermeture ou de défense. Mains visibles et posture ouverte invitent au dialogue."},
+ {q:"Respirer lentement par le ventre aide à faire baisser le stress.",a:true,w:"Inspire 4 secondes, bloque 2, expire 6. Trois fois de suite avant d'aborder un client, ça calme le cœur et la voix."},
+ {q:"Dire « je ne sais pas, je me renseigne » fait perdre toute crédibilité.",a:false,w:"Être honnête puis agir, c'est ce qui crée la confiance. Inventer une réponse, c'est ce qui la détruit."},
+ {q:"Le sourire s'entend, même au téléphone.",a:true,w:"Sourire modifie la voix : elle devient plus chaleureuse. Essaie de dire « Bonjour » avec et sans sourire."},
+ {q:"Un bon vendeur, c'est quelqu'un qui parle beaucoup.",a:false,w:"Un bon vendeur écoute plus qu'il ne parle. Il pose des questions ouvertes pour découvrir les besoins du client."},
+ {q:"Se tromper fait partie de l'apprentissage.",a:true,w:"Chaque essai raté t'apprend quelque chose. Ce qui compte : ce que tu changes la fois suivante."},
+ {q:"Se comparer aux autres aide à prendre confiance.",a:false,w:"Compare-toi à toi d'hier, pas aux autres. Note tes progrès : c'est la meilleure source de confiance."}
+];
+const ATT=[
+ {q:"Un client entre dans le magasin. Tu es en train de faire le facing d'un rayon.",o:["Tu continues sans lever la tête : il viendra te voir s'il a besoin.","Tu lèves la tête, tu le regardes, tu souris et tu dis « Bonjour ! ».","Tu fonces vers lui et tu le suis dans les allées."],c:1,w:"Interrompre sa tâche quelques secondes pour accueillir, c'est montrer au client qu'il compte. Le suivre de trop près le met mal à l'aise."},
+ {q:"À quelle distance te places-tu pour aborder un client ?",o:["Tout près, à moins de 50 cm, pour qu'il t'entende bien.","Environ 1 m à 1,5 m, légèrement de biais.","Tu lui parles depuis la caisse, c'est plus pratique."],c:1,w:"C'est la distance « sociale » : assez proche pour échanger, assez loin pour respecter l'espace du client. Être de biais paraît moins intimidant que de face."},
+ {q:"Comment utilises-tu ta voix ?",o:["Fort et vite, pour montrer que tu es dynamique.","Posée, bien articulée, avec un volume adapté au lieu.","Doucement, en regardant le sol pour ne pas déranger."],c:1,w:"Une voix posée rassure. Astuce : ralentis d'un tiers par rapport à ta vitesse normale quand tu es stressé(e)."},
+ {q:"Que font tes mains pendant que tu parles au client ?",o:["Elles sont dans les poches, c'est plus décontracté.","Elles sont visibles, avec des gestes calmes qui accompagnent tes mots.","Elles tiennent ton téléphone, au cas où."],c:1,w:"Des mains visibles inspirent confiance. Le téléphone en main signale au client qu'il n'est pas ta priorité."},
+ {q:"Une cliente hésite depuis 5 minutes entre deux produits.",o:["« Prenez n'importe lequel, ils se valent. »","« Vous allez l'utiliser comment, principalement ? »","Tu la laisses seule, elle finira bien par choisir."],c:1,w:"Une question ouverte sur l'usage t'aide à conseiller le bon produit et montre que tu t'intéresses à elle."},
+ {q:"Un client mécontent parle fort près de la caisse.",o:["Tu montes le ton à ton tour pour te faire respecter.","Tu l'écoutes sans couper, tu reformules, puis tu proposes une solution.","« Ce n'est pas ma faute, voyez avec le responsable. »"],c:1,w:"Écouter, reformuler (« Si je comprends bien… »), proposer. Le client se calme quand il se sent entendu."}
+];
+const SKILLS=["Écoute active","Empathie","Adaptabilité","Gestion du stress","Esprit d'équipe","Fiabilité","Prise d'initiative","Communication claire"];
+const SOFT=[
+ {q:"Un client raconte longuement sa panne de machine à café. Tu le laisses finir, tu hoches la tête, puis tu résumes : « Donc elle coule, mais l'eau reste froide ? »",c:"Écoute active",o:["Écoute active","Prise d'initiative","Fiabilité","Adaptabilité"],w:"Laisser parler, montrer qu'on suit, puis reformuler : ce sont les trois gestes de l'écoute active."},
+ {q:"Une cliente paniquée cherche un cadeau pour le lendemain. Tu lui dis : « Je comprends, c'est stressant. On va trouver ensemble. »",c:"Empathie",o:["Gestion du stress","Empathie","Communication claire","Esprit d'équipe"],w:"Tu te mets à sa place et tu le lui montres. L'empathie, c'est comprendre l'émotion de l'autre."},
+ {q:"Gros rush du samedi : ton responsable te demande de quitter le rayon textile pour aller en caisse. Tu y vas tout de suite, sans râler.",c:"Adaptabilité",o:["Fiabilité","Adaptabilité","Empathie","Écoute active"],w:"Changer de poste ou de tâche selon les besoins du magasin, c'est l'adaptabilité. Les recruteurs l'adorent."},
+ {q:"Quinze personnes attendent en caisse, un client s'énerve. Tu respires, tu gardes le sourire et tu continues à encaisser sans erreur.",c:"Gestion du stress",o:["Gestion du stress","Prise d'initiative","Empathie","Esprit d'équipe"],w:"Rester efficace et poli sous pression : c'est la gestion du stress, et elle se travaille."},
+ {q:"Ta collègue est débordée par la mise en rayon après une livraison. Une fois ta tâche finie, tu lui proposes ton aide.",c:"Esprit d'équipe",o:["Adaptabilité","Communication claire","Esprit d'équipe","Fiabilité"],w:"Dans un magasin, on réussit ensemble. Proposer son aide sans qu'on le demande, c'est l'esprit d'équipe."},
+ {q:"En PFMP, tu arrives 10 minutes avant ton service, en tenue, et tu fais ce que tu avais promis la veille.",c:"Fiabilité",o:["Fiabilité","Gestion du stress","Écoute active","Prise d'initiative"],w:"Ponctualité, tenue, parole tenue : la fiabilité, c'est ce qui fait qu'on te confie plus de responsabilités."},
+ {q:"Tu remarques qu'une étiquette prix ne correspond pas au prix en caisse. Tu le signales à ton responsable sans attendre qu'on te le demande.",c:"Prise d'initiative",o:["Esprit d'équipe","Prise d'initiative","Empathie","Adaptabilité"],w:"Repérer un problème et agir, c'est la prise d'initiative. Ici, tu évites aussi un litige avec un client."},
+ {q:"Un client âgé ne comprend pas la carte de fidélité. Tu lui expliques en deux phrases simples, sans jargon, et tu vérifies qu'il a compris.",c:"Communication claire",o:["Communication claire","Écoute active","Fiabilité","Gestion du stress"],w:"Adapter ses mots à la personne, faire court et vérifier la compréhension : c'est communiquer clairement."}
+];
+const FORM=[
+ {b:"Je peux vous aider ?",g:"Bonjour ! Vous cherchez quelque chose pour une occasion particulière ?",w:"« Je peux vous aider ? » appelle un « Non merci, je regarde ». Une question ouverte lance la conversation."},
+ {b:"Pas de problème.",g:"Avec plaisir !",w:"Évite les mots négatifs : le cerveau du client retient « problème »."},
+ {b:"Je ne sais pas.",g:"Bonne question ! Je me renseigne tout de suite pour vous.",w:"Tu restes honnête et tu montres que tu passes à l'action."},
+ {b:"C'est pas possible.",g:"Voici ce que je peux vous proposer…",w:"Le client entend une solution au lieu d'un refus."},
+ {b:"Attendez.",g:"Je suis à vous dans un instant, merci de votre patience.",w:"Même message, mais le client se sent respecté."},
+ {b:"C'est pas cher.",g:"C'est un très bon rapport qualité-prix.",w:"On valorise le produit au lieu de parler du prix de façon négative."},
+ {b:"Vous avez tort.",g:"Je comprends. Permettez-moi de vous préciser un point…",w:"On ne met jamais le client en défaut : on complète l'information."},
+ {b:"Je vais essayer.",g:"Je m'en occupe.",w:"« Essayer » sonne comme un échec annoncé. « Je m'en occupe » rassure."},
+ {b:"Il faut que vous passiez en caisse 3.",g:"Je vous propose de passer en caisse 3, c'est la plus rapide.",w:"On propose au lieu d'ordonner, et on donne la raison."}
+];
+const SCENES=[
+ {t:"Le client « qui regarde juste »",l:"Boutique de prêt-à-porter",v:"Aborde le client et engage la conversation malgré son « Je regarde ».",s:"Tu réponds « Je regarde » à la première question. Si le vendeur pose une question ouverte et sympa, tu te détends et tu parles d'un mariage où tu es invité(e)."},
+ {t:"Le client pressé",l:"Rayon cadeaux",v:"Trouve un cadeau en moins de 2 minutes, sans brusquer le client.",s:"Tu as 5 minutes avant ton bus. C'est l'anniversaire de ta sœur de 15 ans. Tu regardes ta montre souvent."},
+ {t:"L'hésitant",l:"Rayon high-tech",v:"Aide le client à choisir entre deux casques audio.",s:"Tu hésites entre deux casques (49 € et 89 €). Tu écoutes de la musique dans le bus et tu fais du sport. Tu ne donnes ces infos que si on te pose des questions."},
+ {t:"Le client mécontent",l:"Accueil du magasin",v:"Gère la réclamation et propose une solution.",s:"Ta bouilloire achetée il y a une semaine ne chauffe plus. Tu es énervé(e) au début, tu te calmes si le vendeur t'écoute et reformule."},
+ {t:"La cliente timide",l:"Rayon parfumerie",v:"Repère la cliente qui n'ose pas demander et mets-la à l'aise.",s:"Tu tournes autour du rayon sans oser demander. Tu cherches un parfum pour ta mère. Tu parles très doucement."},
+ {t:"La rupture de stock",l:"Allée centrale, produit en promo",v:"Annonce que le produit du prospectus est épuisé et propose une alternative.",s:"Tu viens exprès pour la promo du prospectus. Tu es déçu(e). Tu acceptes une solution si on te la présente bien."},
+ {t:"Interrompu en pleine mise en rayon",l:"Rayon épicerie",v:"Accueille le client alors que tu es occupé(e), puis renseigne-le.",s:"Tu cherches le rayon sans gluten. Tu n'aimes pas qu'on te réponde sans te regarder."},
+ {t:"Le client âgé",l:"Rayon bricolage",v:"Aide le client à lire une étiquette et à comparer deux produits.",s:"Tu n'as pas tes lunettes. Tu veux une ampoule « comme l'ancienne » que tu tiens à la main. Tu parles lentement."}
+];
+const OBS=["« Bonjour » + sourire","Regard dans les yeux","Posture ouverte, mains visibles","Question ouverte posée","Écoute et reformulation","Prise de congé soignée"];
+const MICRO=[
+ "Annonce au micro : la promotion du jour sur un produit de ton choix.",
+ "Vends un objet de ta trousse au groupe en 30 secondes.",
+ "Présente-toi à un client comme le jour de l'ouverture du magasin.",
+ "Annonce au micro : le magasin ferme dans 15 minutes. Reste aimable !",
+ "Dis une de tes qualités et donne un exemple concret qui le prouve.",
+ "Accueille un groupe de clients qui entre en même temps.",
+ "Présente ton futur magasin idéal comme si tu le faisais visiter.",
+ "Fais le compliment sincère d'une qualité à un camarade de ton choix."
+];
+
+function blank(){return {teams:["Les Têtes de gondole","Les Promos","Les Facings","Les Caddies"].map((n)=>({name:n,score:0})),st:0,done:{},idx:{vf:0,att:0,soft:0,form:0},rev:{},aw:{},wxMode:"start",wx:{start:[0,0,0,0,0],end:[0,0,0,0,0]},ice:-1,deck:[],scene:-1,obs:{},micro:-1,microPts:1,skills:{}}}
+let S;
+function save(){try{localStorage.setItem("mc1mcva",JSON.stringify(S))}catch(e){}}
+function load(){try{const r=localStorage.getItem("mc1mcva");if(r)return Object.assign(blank(),JSON.parse(r))}catch(e){}return null}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+
+/* ---- Chrono ---- */
+let tLeft=0,tRun=null,ac=null;
+function setTimer(sec,start){clearInterval(tRun);tRun=null;tLeft=sec;$("#timer").classList.remove("done");drawT();if(start)play()}
+function drawT(){$("#tval").textContent=fmt(tLeft);$("#timer").classList.toggle("low",tRun!=null&&tLeft<=10&&tLeft>0);if(tRun&&tLeft<=5&&tLeft>0)tick();$("#tplay").textContent=tRun?"⏸":"▶";$("#tplay").setAttribute("aria-label",tRun?"Mettre en pause":"Lancer le chrono")}
+function play(){if(tRun){clearInterval(tRun);tRun=null;drawT();return}if(tLeft<=0)return;tRun=setInterval(()=>{tLeft--;if(tLeft<=0){tLeft=0;clearInterval(tRun);tRun=null;$("#timer").classList.add("done");beep()}drawT()},1000);drawT()}
+function beep(){try{ensureAudio();[0,.25,.5].forEach(d=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=880;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(.2,ac.currentTime+d);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d+.2);o.start(ac.currentTime+d);o.stop(ac.currentTime+d+.22)})}catch(e){}}
+$("#tplay").onclick=play;
+$("#treset").onclick=()=>setTimer(STATIONS[S.st].min*60);
+
+/* ---- Scores ---- */
+function drawBoard(bumpI){
+  const ranks=S.teams.map(t=>1+S.teams.filter(u=>u.score>t.score).length);const top=Math.max(...S.teams.map(t=>t.score));
+  $("#board").innerHTML=S.teams.map((t,i)=>`<div class="tagrow ${t.score===top&&top>0?"lead1":""}" style="--c:${COL[i]}"><span class="rk">${t.score===top&&top>0?"👑":ranks[i]}</span><span class="nm">${esc(t.name)}</span><span class="price ${bumpI===i?"bump":""}">${t.score}</span><div class="adj"><button data-adj="${i}|-1" aria-label="Retirer un point à ${esc(t.name)}">−1</button><button data-adj="${i}|1" aria-label="Ajouter un point à ${esc(t.name)}">+1</button><button data-adj="${i}|2" aria-label="Ajouter deux points à ${esc(t.name)}">+2</button></div></div>`).join("");
+}
+function addPts(i,p){S.teams[i].score+=p;save();drawBoard(i)}
+function awardHTML(key,label,pts){
+  return `<div class="award"><span class="award-l">${label}</span><div class="chips">${S.teams.map((t,i)=>{const k=key+"|"+i;return `<button class="chip ${S.aw[k]!=null?"on":""}" style="--c:${COL[i]}" data-aw="${k}" data-i="${i}" ${pts!=null?`data-pts="${pts}"`:""}>${esc(t.name)}${S.aw[k]!=null?" +"+S.aw[k]:""}</button>`}).join("")}</div></div>`;
+}
+
+/* ---- Navigation ---- */
+function drawSteps(){
+  $("#steps").innerHTML=STATIONS.map((s,i)=>`<button class="step ${i===S.st?"on":""} ${S.done[i]&&i!==S.st?"done":""}" style="--c:${s.c}" data-go="${i}"><span class="ic" aria-hidden="true">${S.done[i]&&i!==S.st?"✓":s.ic}</span><span><b>${s.t}</b><em>${s.min} min</em></span></button>`).join("");
+  const n=Object.keys(S.done).filter(k=>S.done[k]).length;$("#prog").style.width=Math.min(100,100*(Math.max(n,S.st))/(STATIONS.length-1))+"%";
+}
+function go(i){S.done[S.st]=S.st!==i?true:S.done[S.st];S.st=i;save();drawSteps();render();setTimer(STATIONS[i].min*60);const sg=$("#stage");sg.style.animation="none";sg.offsetWidth;sg.style.animation="";if(STATIONS[i].id==="bilan")setTimeout(()=>{fanfare();for(let k=0;k<4;k++)setTimeout(()=>burst(innerWidth*(.2+.2*k),innerHeight*.35,90),k*250)},400);const on=$(".step.on");on&&on.scrollIntoView({block:"nearest",inline:"center"});window.scrollTo({top:0})}
+function foot(){
+  const p=S.st>0?`<button class="btn ghost" data-go="${S.st-1}">← ${STATIONS[S.st-1].t}</button>`:"<span></span>";
+  const n=S.st<STATIONS.length-1?`<button class="btn primary" data-go="${S.st+1}">Activité suivante : ${STATIONS[S.st+1].t} →</button>`:"";
+  return `<div class="foot">${p}${n}</div>`;
+}
+function head(eb,title,lead,goal){const x=STATIONS[S.st];return `<div class="st-head"><span class="badge" aria-hidden="true">${x.ic}</span><div><div class="eyebrow">Mission ${S.st} · ${eb}</div><h2>${title}</h2>${goal?`<div class="goal">Objectif : ${goal}</div>`:""}</div></div>${consHTML(STATIONS[S.st].id,lead)}`}
+
+/* ---- Activités ---- */
+const R={};
+R.prep=()=>head("Avant de commencer","Composez vos équipes","Formez 3 à 6 équipes. Chaque équipe choisit un nom de rayon, de magasin ou de produit. Pendant une heure, vous gagnez des points en osant, en réfléchissant ensemble et en vous encourageant.","se mettre en route en confiance")+
+ `<div class="teams-edit">${S.teams.map((t,i)=>`<div class="team-in" style="--c:${COL[i]}"><i></i><input id="team${i}" aria-label="Nom de l'équipe ${i+1}" data-team="${i}" value="${esc(t.name)}" maxlength="28"><button class="btn ghost" data-delteam="${i}" ${S.teams.length<=2?"disabled":""} aria-label="Supprimer l'équipe">✕</button></div>`).join("")}
+ <div class="row"><button class="btn" id="addteam" ${S.teams.length>=6?"disabled":""}>+ Ajouter une équipe</button></div></div>
+ <div class="rules">
+  <div class="rule" style="--c:var(--pink)"><b>On a le droit de se tromper</b>Une erreur, c'est un essai. Personne ne se moque.</div>
+  <div class="rule" style="--c:var(--cyan)"><b>On encourage</b>Après chaque passage : un point fort et un conseil, dans cet ordre.</div>
+  <div class="rule" style="--c:var(--lime)"><b>Les bonus</b>Courage, entraide et fair-play rapportent des points en plus.</div>
+ </div>`+foot();
+
+R.meteo=()=>{const m=S.wxMode,t=S.wx[m];return head("Échauffement","Météo intérieure","Quand tu dois parler à un client, quel temps fait-il dans ta tête ? Chaque élève vient cliquer sur sa météo. C'est anonyme : on regarde juste le ciel de la classe.","mettre des mots sur ce qu'on ressent")+
+ `<div class="row" style="margin-bottom:14px"><div class="seg" role="group" aria-label="Moment du vote"><button data-wxmode="start" class="${m==="start"?"on":""}">Début de séance</button><button data-wxmode="end" class="${m==="end"?"on":""}">Fin de séance</button></div><button class="btn ghost" id="wxundo">Effacer ce vote</button></div>
+ <div class="meteo">${WX.map((w,i)=>`<button class="wx" data-wx="${i}"><span class="e" aria-hidden="true">${w.e}</span><b>${w.n}</b><span>${w.d}</span><span class="n">${t[i]}</span></button>`).join("")}</div>
+ <div class="icebreak card"><div class="eyebrow" style="margin:0">Question brise-glace</div><div class="q">${S.ice<0?"Tire une question : un volontaire de chaque équipe y répond en une phrase.":esc(ICE[S.ice])}</div><div class="row"><button class="btn yellow" id="icedraw">Tirer une question</button></div>${awardHTML("ice"+S.ice,"Bonus courage : +1 pour l'équipe du volontaire",1)}</div>`+foot()};
+
+function quizNav(key,len){const i=S.idx[key];return `<div class="row"><button class="btn ghost" data-qprev="${key}" ${i===0?"disabled":""}>← Précédente</button><button class="btn primary" data-qnext="${key}" ${i>=len-1?"disabled":""}>Question suivante →</button><span class="counter">Question ${i+1} sur ${len}</span></div>`}
+
+R.vf=()=>{const i=S.idx.vf,x=VF[i],k="vf"+i,r=S.rev[k];return head("Quiz en équipe","Vrai ou faux ?","Chaque équipe se concerte 20 secondes, puis lève le carton Vrai ou Faux en même temps. On révèle ensuite la réponse.","casser les idées reçues sur la confiance")+
+ `<div class="card"><div class="counter">Affirmation ${i+1}</div><div class="q">« ${x.q} »</div>
+ ${r?`<div class="answer ${x.a?"ok":"no"}"><strong>${x.a?"VRAI":"FAUX"}</strong>${x.w}</div>${awardHTML(k,"Équipes qui ont trouvé (+1)",1)}`:`<div class="row"><button class="btn yellow" data-reveal="${k}">Révéler la réponse</button><button class="btn ghost" data-timer="20">Chrono 20 s</button></div>`}
+ ${quizNav("vf",VF.length)}</div>`+foot()};
+
+function mcq(key,arr,title,eb,lead,goal,letters){const i=S.idx[key],x=arr[i],k=key+i,r=S.rev[k];
+ return head(eb,title,lead,goal)+`<div class="card"><div class="counter">Situation ${i+1}</div><div class="q">${x.q}</div>
+ <div class="opts">${x.o.map((o,j)=>`<div class="opt ${r?(j===x.c?"good":"bad"):""}"><span class="k">${"ABCD"[j]}</span><span>${o}</span></div>`).join("")}</div>
+ ${r?`<p class="why">${x.w}</p>${awardHTML(k,"Équipes qui ont trouvé (+1)",1)}`:`<div class="row"><button class="btn yellow" data-reveal="${k}">Révéler la bonne réponse</button><button class="btn ghost" data-timer="30">Chrono 30 s</button></div>`}
+ ${quizNav(key,arr.length)}</div>`+foot()}
+R.att=()=>mcq("att",ATT.map((x,i)=>{const n=x.o.length,r=[0,2,1,0,2,1][i]%n;const o=x.o.map((_,j)=>x.o[(j+n-r)%n]);return{...x,o,c:(x.c+r)%n}}),"Quelle attitude ?","Langage du corps","Le client lit ton attitude avant d'écouter tes mots. Chaque équipe annonce sa lettre, puis un volontaire vient mimer la bonne attitude devant la classe.","soigner son non-verbal");
+R.soft=()=>{const s=SOFT.map(x=>({q:x.q,o:x.o,c:x.o.indexOf(x.c),w:x.w}));return mcq("soft",s,"Soft skills : qui fait quoi ?","Savoir-être","Les soft skills, ce sont les qualités humaines que les employeurs recherchent autant que les compétences techniques. Quelle soft skill le vendeur utilise-t-il dans chaque situation ?","reconnaître ses savoir-être pour mieux les valoriser")};
+
+R.form=()=>{const i=S.idx.form,x=FORM[i],k="form"+i,r=S.rev[k];return head("Les mots qui vendent","Formules gagnantes","Voici une phrase maladroite qu'on entend souvent en magasin. Chaque équipe propose à voix haute une version plus positive. Le professeur donne le point à la meilleure proposition, puis on révèle notre version.","oser parler avec des mots qui rassurent")+
+ `<div class="card"><div class="counter">Phrase ${i+1} sur ${FORM.length}</div><div class="pair"><div class="say bad"><small>À éviter</small>« ${x.b} »</div>${r?`<div class="say good"><small>À dire</small>« ${x.g} »</div>`:`<div class="say hide">À vous de reformuler…</div>`}</div>
+ ${r?`<p class="why">${x.w}</p>`:`<div class="row"><button class="btn yellow" data-reveal="${k}">Révéler une formule gagnante</button><button class="btn ghost" data-timer="45">Chrono 45 s</button></div>`}
+ ${awardHTML(k,"Meilleure proposition (+2)",2)}${quizNav("form",FORM.length)}</div>`+foot()};
+
+R.scene=()=>{const c=S.scene,x=SCENES[c],o=S.obs[c]||[],pts=o.length;
+ return head("Jeu de rôle","Défi en scène","Une équipe envoie un vendeur, une autre équipe envoie un client. On tire une situation, le client lit sa consigne secrète, et c'est parti pour 2 minutes. La classe observe avec la grille : chaque critère réussi rapporte 1 point à l'équipe du vendeur.","oser aborder et conseiller un client")+
+ `<div class="row" style="margin-bottom:14px"><button class="btn yellow" id="drawscene" ${S.deck.length>=SCENES.length?"disabled":""}>Tirer une situation</button><div class="deck" aria-label="${S.deck.length} situations jouées sur ${SCENES.length}">${SCENES.map((_,j)=>`<i class="${S.deck.includes(j)?"used":""}"></i>`).join("")}</div><span class="counter">${S.deck.length} / ${SCENES.length} jouées</span></div>
+ ${c<0?`<div class="card"><div class="q">Tire une situation pour commencer.</div><p class="why">Conseil : avant de jouer, le vendeur prend trois respirations lentes (4 s inspire, 6 s expire).</p></div>`:
+ `<div class="scene-card"><div class="scene-head"><h3>${x.t}</h3><span>${x.l}</span></div><div class="scene-body">
+  <div class="role"><small>Mission du vendeur</small>${x.v}</div>
+  ${S.rev["sc"+c]?`<div class="role secret"><small>Consigne secrète du client</small>${x.s}</div>`:`<div class="row"><button class="btn" data-reveal="sc${c}">Afficher la consigne du client</button><span class="note">À montrer au joueur client uniquement, ou à lire à voix basse.</span></div>`}
+  <div class="row"><button class="btn primary" data-timer="120" data-go-now="1">Lancer le chrono 2 min</button></div>
+  <div><div class="award-l" style="margin-bottom:8px">Grille d'observation (la classe vote critère par critère)</div><div class="grid-obs">${OBS.map((t,j)=>`<label><input type="checkbox" id="obs${c}_${j}" data-obs="${j}" ${o.includes(j)?"checked":""}> ${t}</label>`).join("")}</div></div>
+  <p class="why">Retour de la classe : un point fort, puis un conseil. Le client dit aussi comment il s'est senti.</p>
+  ${awardHTML("sc"+c+"pts",`Donner ${pts} point${pts>1?"s":""} à l'équipe du vendeur`,pts)}
+  ${awardHTML("sc"+c+"cl","Bonus client bien joué (+1)",1)}
+ </div></div>`}`+foot()};
+
+R.micro=()=>{const m=S.micro;return head("Prise de parole","Le micro du magasin","Un élève par équipe tire un défi et prend la parole 30 secondes devant le groupe, comme au micro du magasin. Debout, regard vers la salle, voix posée. Le groupe applaudit chaque passage.","parler devant les autres sans perdre ses moyens")+
+ `<div class="card"><div class="eyebrow" style="margin:0">Défi 30 secondes</div><div class="q">${m<0?"Tire un défi pour lancer le premier passage.":MICRO[m]}</div>
+ <div class="row"><button class="btn yellow" id="drawmicro">Tirer un défi</button><button class="btn primary" data-timer="30" data-go-now="1">Lancer 30 s</button></div>
+ ${m<0?"":`<div class="row"><span class="award-l">Points pour ce passage</span><div class="seg" role="group" aria-label="Points">${[1,2,3].map(p=>`<button data-mpts="${p}" class="${S.microPts===p?"on":""}">+${p}</button>`).join("")}</div></div>
+ <p class="note">+1 : j'ai osé · +2 : voix et regard maîtrisés · +3 : convaincant du début à la fin</p>
+ ${awardHTML("mic"+(S.micN||0),"Équipe de l'orateur",S.microPts)}`}</div>`+foot()};
+
+R.bilan=()=>{const sorted=S.teams.map((t,i)=>({...t,i})).sort((a,b)=>b.score-a.score);const max=Math.max(1,...sorted.map(t=>t.score));
+ const order=sorted.length>=3?[sorted[1],sorted[0],sorted[2]]:sorted;
+ const st=S.wx.start,en=S.wx.end,ts=Math.max(1,st.reduce((a,b)=>a+b,0)),te=Math.max(1,en.reduce((a,b)=>a+b,0));
+ return head("Pour finir","Bilan de la mission","On regarde le chemin parcouru. Chacun repart avec une phrase et une soft skill à mettre en avant en PFMP.","repartir avec une réussite en tête")+
+ `<div class="podium">${order.map(t=>`<div class="pod" style="--c:${COL[t.i]}">${t===sorted[0]&&t.score>0?'<span class="crown" aria-hidden="true">👑</span>':""}<b>${esc(t.name)}</b><div class="bar" style="height:${60+120*t.score/max}px">${t.score}</div></div>`).join("")}</div>
+ <div class="section"><h3>La météo a-t-elle changé ?</h3><p class="note">Faites revoter la classe dans « Météo intérieure », bouton « Fin de séance ».</p>
+ <div class="cmp"><div class="cmp-row"><span></span><span class="award-l">Début</span><span class="award-l">Fin</span></div>${WX.map((w,i)=>`<div class="cmp-row"><span>${w.n}</span><div class="cmp-bar"><i style="width:${100*st[i]/ts}%"></i></div><div class="cmp-bar end"><i style="width:${100*en[i]/te}%"></i></div></div>`).join("")}</div></div>
+ <div class="section"><h3>Ma soft skill forte</h3><p class="note">Chaque élève vient cliquer sur la qualité qu'il a montrée aujourd'hui.</p><div class="skills">${SKILLS.map(s=>`<button class="skill" data-skill="${esc(s)}">${s}<span class="c">${S.skills[s]||0}</span></button>`).join("")}</div></div>
+ <div class="section"><h3>Je repars avec…</h3><div class="starters"><div class="starter">Aujourd'hui, j'ai osé…</div><div class="starter">La formule que je vais réutiliser en PFMP : …</div><div class="starter">Avant d'aborder un client, je vais…</div></div></div>
+ <div class="section"><div class="row">${S.confirmReset?`<span>Tout effacer (équipes, scores, votes) ?</span><button class="btn" id="resetyes" style="border-color:var(--stop);color:var(--stop)">Oui, nouvelle partie</button><button class="btn ghost" id="resetno">Annuler</button>`:`<button class="btn ghost" id="reset">Nouvelle partie</button>`}</div></div><p class="note" style="margin-top:20px">Mission Confiance · jeu conçu par Marie Frison pour la classe de 1MCVA.</p>`+foot()};
+
+function render(){const st=$("#stage");st.style.setProperty("--sc",STATIONS[S.st].c);st.innerHTML=R[STATIONS[S.st].id]()}
+
+const CONS={
+ prep:{intro:"Bienvenue dans Mission Confiance ! Pendant 1 heure, vous allez vous entraîner à oser parler aux clients.",steps:["Formez des équipes de 4.","Choisissez un nom d'équipe et donnez-le au professeur.","Prenez vos cartons : VRAI, FAUX, A, B, C, D."],cards:["VRAI","FAUX","A","B","C","D"],pts:"Affichés à droite"},
+ meteo:{steps:["Pensez à cette question : face à un client, comment je me sens ?","Venez un par un cliquer sur votre météo. C'est anonyme.","Ensuite, un volontaire par équipe répond à la question brise-glace."],pts:"+1 bonus courage"},
+ vf:{steps:["Lisez la phrase à voix haute.","Discutez 20 secondes dans l'équipe, à voix basse.","Au signal, toutes les équipes lèvent leur carton en même temps.","Le professeur révèle la réponse."],cards:["VRAI","FAUX"],pts:"+1 si c'est juste"},
+ att:{steps:["Lisez la situation.","Choisissez la meilleure attitude en équipe (30 secondes).","Au signal, levez votre carton.","Un volontaire vient mimer la bonne attitude."],cards:["A","B","C"],pts:"+1 si c'est juste"},
+ soft:{intro:"Les soft skills, ce sont les qualités humaines que les employeurs recherchent : écoute, empathie, fiabilité…",steps:["Lisez la situation.","Trouvez quelle qualité le vendeur utilise (30 secondes).","Au signal, levez votre carton."],cards:["A","B","C","D"],pts:"+1 si c'est juste"},
+ form:{steps:["Lisez la phrase à éviter.","En équipe, inventez une phrase plus positive (45 secondes).","Votre porte-parole la dit à voix haute.","Le professeur révèle une formule gagnante."],pts:"+2 pour la meilleure phrase"},
+ scene:{steps:["Une équipe envoie un vendeur, une autre équipe un client.","Le client lit sa consigne secrète sans la montrer.","Vous jouez la scène pendant 2 minutes.","La classe coche la grille : 1 critère réussi = 1 point.","On donne un point fort, puis un conseil."],pts:"Jusqu'à +6 pour le vendeur"},
+ micro:{steps:["Un élève par équipe vient devant la classe.","Il tire un défi.","Il parle 30 secondes, debout, en regardant la classe.","Tout le monde applaudit !"],pts:"+1 à +3"},
+ bilan:{steps:["Regardez le podium.","Revotez la météo (bouton « Fin de séance ») et comparez.","Chacun vient cliquer sur sa soft skill forte.","Complétez une phrase « Je repars avec… »."]}
+};
+/* ---- Consignes ---- */
+const CARDC={VRAI:"#0E8A5F",FAUX:"#C7362F",A:"#1F4FC4",B:"#C4006B",C:"#5B3CC4",D:"#B35A00"};
+function cardsHTML(list){return `<div class="pcards">${list.map(k=>`<span class="pcard" style="background:${CARDC[k]}">${k}</span>`).join("")}</div>`}
+function consHTML(id,lead){const c=CONS[id];if(!c||(id==="bous"&&typeof BQ!=="undefined"&&S.bq>=BQ.length))return `<p class="lead">${lead}</p>`;
+ const side=(c.cards?`<span class="lab">Vous levez</span>${cardsHTML(c.cards)}`:"")+(c.pts?`<span class="lab">Points</span><span class="pts-chip">${c.pts}</span>`:"");
+ return `${c.intro?`<p class="intro">${c.intro}</p>`:""}<div class="consigne ${side?"":"solo"}"><h4>Ce que vous devez faire</h4><ol>${c.steps.map(s=>`<li><span>${s}</span></li>`).join("")}</ol>${side?`<div class="cons-side">${side}</div>`:""}</div>`}
+
+/* ---- Événements ---- */
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;const d=b.dataset;
+  if(d.go!=null){go(+d.go);return}
+  if(d.adj){const[i,p]=d.adj.split("|").map(Number);addPts(i,p);if(p>0){const r=b.getBoundingClientRect();burst(r.left+r.width/2,r.top,24,COL[i]);ding()}return}
+  if(d.aw){const k=d.aw,i=+d.i;if(S.aw[k]!=null){addPts(i,-S.aw[k]);delete S.aw[k]}else{const p=d.pts!=null?+d.pts:1;if(p<=0)return;S.aw[k]=p;addPts(i,p);const r=b.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,40,COL[i]);ding()}save();render();return}
+  if(d.reveal){S.rev[d.reveal]=1;save();render();whoosh();return}
+  if(d.qnext){S.idx[d.qnext]++;save();render();return}
+  if(d.qprev){S.idx[d.qprev]--;save();render();return}
+  if(d.timer){setTimer(+d.timer,true);return}
+  if(d.wx!=null){S.wx[S.wxMode][+d.wx]++;S.lastWx=+d.wx;save();render();return}
+  if(d.wxmode){S.wxMode=d.wxmode;save();render();return}
+  if(d.delteam!=null){S.teams.splice(+d.delteam,1);S.aw={};save();drawBoard();render();return}
+  if(d.obs!=null)return;
+  if(d.mpts){S.microPts=+d.mpts;save();render();return}
+  if(d.skill){S.skills[d.skill]=(S.skills[d.skill]||0)+1;save();render();return}
+  switch(b.id){
+    case "startgame":S.started=1;save();$("#splash").hidden=true;$("#rules").hidden=false;ensureAudio();fanfare();burst(innerWidth/2,innerHeight/3,120);break;
+    case "showrules":$("#rules").hidden=false;break;
+  case "rulesgo":$("#rules").hidden=true;burst(innerWidth/2,innerHeight/3,60);ding();break;
+  case "home":$("#splash").hidden=false;break;
+    case "addteam":S.teams.push({name:"Équipe "+(S.teams.length+1),score:0});save();drawBoard();render();break;
+    case "wxundo":if(S.lastWx!=null&&S.wx[S.wxMode][S.lastWx]>0){S.wx[S.wxMode][S.lastWx]--;S.lastWx=null;save();render()}break;
+    case "icedraw":{let n;do{n=Math.floor(Math.random()*ICE.length)}while(n===S.ice&&ICE.length>1);S.ice=n;save();render();break}
+    case "drawscene":{const left=SCENES.map((_,j)=>j).filter(j=>!S.deck.includes(j));if(!left.length)break;const n=left[Math.floor(Math.random()*left.length)];S.deck.push(n);S.scene=n;save();render();setTimer(120);break}
+    case "drawmicro":{let n;do{n=Math.floor(Math.random()*MICRO.length)}while(n===S.micro&&MICRO.length>1);S.micro=n;S.micN=(S.micN||0)+1;save();render();setTimer(30);break}
+    case "reset":S.confirmReset=1;render();break;
+    case "resetno":S.confirmReset=0;render();break;
+    case "resetyes":S=blank();save();drawSteps();drawBoard();render();setTimer(STATIONS[0].min*60);$("#splash").hidden=false;break;
+  }
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.dataset.obs!=null){const c=S.scene,j=+t.dataset.obs;S.obs[c]=S.obs[c]||[];if(t.checked){if(!S.obs[c].includes(j))S.obs[c].push(j)}else S.obs[c]=S.obs[c].filter(x=>x!==j);save();render()}
+});
+document.addEventListener("input",e=>{
+  const t=e.target;if(t.dataset.team!=null){S.teams[+t.dataset.team].name=t.value||("Équipe "+(+t.dataset.team+1));save();drawBoard()}
+});
+
+/* ---- Effets : confettis et sons ---- */
+const cv=$("#fx"),cx=cv.getContext("2d");let parts=[],raf=null;const RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function fit(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio;cx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}addEventListener("resize",fit);fit();
+const FXC=["#FFD23F","#FF4F8B","#2ED8F0","#8BE36B","#B194FF","#FF9142"];
+function burst(x,y,n,col){if(RM)return;for(let k=0;k<n;k++){const a=Math.random()*Math.PI*2,v=4+Math.random()*8;parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-5,r:Math.random()*6.28,vr:(Math.random()-.5)*.4,w:6+Math.random()*7,h:4+Math.random()*5,c:col&&Math.random()<.5?col:FXC[k%FXC.length],l:90+Math.random()*40})}if(!raf)loop()}
+function loop(){cx.clearRect(0,0,innerWidth,innerHeight);parts=parts.filter(p=>p.l>0);for(const p of parts){p.vy+=.28;p.vx*=.985;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.l--;cx.save();cx.globalAlpha=Math.min(1,p.l/30);cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.fillRect(-p.w/2,-p.h/2,p.w,p.h);cx.restore()}raf=parts.length?requestAnimationFrame(loop):(cx.clearRect(0,0,innerWidth,innerHeight),null)}
+function ensureAudio(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume()}catch(e){}}
+function tone(f,d,len,type,vol){try{ensureAudio();const o=ac.createOscillator(),g=ac.createGain();o.type=type||"sine";o.frequency.value=f;o.connect(g);g.connect(ac.destination);const t=ac.currentTime+d;g.gain.setValueAtTime(vol||.18,t);g.gain.exponentialRampToValueAtTime(.001,t+len);o.start(t);o.stop(t+len+.02)}catch(e){}}
+function ding(){tone(988,0,.15,"triangle");tone(1319,.09,.3,"triangle")}
+function whoosh(){tone(523,0,.12,"square",.06);tone(784,.08,.2,"square",.06)}
+function tick(){tone(660,0,.06,"square",.05)}
+function fanfare(){[523,659,784,1047].forEach((f,k)=>tone(f,k*.12,k===3?.5:.18,"triangle",.16))}
+$("#map").innerHTML=STATIONS.map(x=>`<div class="mtile" style="--c:${x.c}"><span class="e" aria-hidden="true">${x.ic}</span><b>${x.t}</b><em>${x.min} min</em></div>`).join("");
+
+$("#rulescards").innerHTML=cardsHTML(["VRAI","FAUX","A","B","C","D"]);
+function start(data){
+  S=(data&&data.S)||load()||blank();
+  drawSteps();drawBoard();render();setTimer(STATIONS[S.st].min*60);
+  $("#splash").hidden=!!S.started;
+  window.claude?.hot?.snapshot?.(()=>({S}));
+}
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
