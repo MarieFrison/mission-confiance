@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mission Confiance 1MCVA</title>
+<meta name="author" content="Marie Frison">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout : plateau de jeu télé. Bandeau (logo + chrono) / piste des 9 missions + barre de progression / scène colorée par mission + scores en étiquettes prix. Univers sombre assumé (projection). */
+:root{
+  color-scheme:dark;
+  --bg:#130F2E; --bg2:#1C1745; --card:#241E57; --card2:#2E2768; --ink:#FFFFFF; --muted:#BDB6E8; --line:#3D347C;
+  --tag:#FFD23F; --on-tag:#130F2E; --pink:#FF4F8B; --cyan:#2ED8F0; --lime:#8BE36B; --orange:#FF9142; --violet:#B194FF;
+  --go:#3DDC97; --stop:#FF6363; --sc:var(--tag);
+  --f-show:"Lilita One","Bricolage Grotesque","Arial Black",sans-serif;
+  --f-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --r:16px;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{background:var(--bg);background-image:radial-gradient(circle at 15% -10%,rgba(255,79,139,.28),transparent 45%),radial-gradient(circle at 90% 0%,rgba(46,216,240,.22),transparent 40%),radial-gradient(rgba(255,255,255,.06) 1px,transparent 1.5px);background-size:auto,auto,22px 22px;background-attachment:fixed;color:var(--ink);font-family:var(--f-body);font-size:18px;line-height:1.5;padding-inline:16px;padding-block:0 32px;min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
+h1,h2,h3{font-family:var(--f-show);font-weight:400;text-wrap:balance;margin:0;line-height:1.05;letter-spacing:.01em}
+.wrap{max-width:1320px;margin:0 auto}
+
+/* Bandeau */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding-block:18px 14px}
+.brand{display:flex;align-items:center;gap:14px;background:none;border:0;padding:0;text-align:left}
+.logo{width:58px;height:58px;flex:0 0 auto;border-radius:16px;background:var(--tag);color:var(--on-tag);display:grid;place-items:center;font-size:32px;transform:rotate(-6deg);box-shadow:4px 4px 0 var(--pink)}
+.brand h1{font-size:clamp(28px,4vw,44px);text-shadow:3px 3px 0 var(--pink)}
+.brand h1 span{color:var(--tag)}
+.brand small{display:block;color:var(--muted);font-size:14px;letter-spacing:.05em}
+.brand small b{color:var(--cyan)}
+.timer{display:flex;align-items:center;gap:8px;background:var(--card);border:3px solid var(--cyan);border-radius:999px;padding:6px 8px 6px 20px;box-shadow:0 0 24px rgba(46,216,240,.35)}
+.timer .t{font-family:var(--f-show);font-size:34px;font-variant-numeric:tabular-nums;min-width:4.3ch;color:var(--cyan)}
+.timer.low{border-color:var(--orange)} .timer.low .t{color:var(--orange)}
+.timer.done{border-color:var(--stop);animation:shake .5s 4}
+.timer.done .t{color:var(--stop)}
+@keyframes shake{25%{transform:translateX(-4px) rotate(-1deg)}75%{transform:translateX(4px) rotate(1deg)}}
+.icon-btn{border:0;background:var(--card2);border-radius:999px;height:44px;min-width:44px;padding:0 14px;font-weight:700;font-size:18px}
+.icon-btn:hover{background:var(--line)}
+
+/* Piste des missions */
+.steps{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:thin}
+.step{--c:var(--tag);flex:0 0 auto;display:flex;align-items:center;gap:10px;border:2px solid var(--line);background:var(--bg2);border-radius:14px;padding:8px 14px 8px 8px;text-align:left;transition:transform .15s}
+.step:hover{transform:translateY(-2px);border-color:var(--c)}
+.step .ic{width:38px;height:38px;border-radius:10px;background:var(--card2);display:grid;place-items:center;font-size:20px}
+.step b{display:block;font-size:15px;line-height:1.2}
+.step em{font-style:normal;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.step.on{background:var(--c);border-color:var(--c);color:var(--on-tag);box-shadow:0 6px 0 rgba(0,0,0,.35)}
+.step.on .ic{background:rgba(19,15,46,.15)}
+.step.on em{color:var(--on-tag);opacity:.75}
+.step.done .ic{background:var(--go);color:var(--on-tag)}
+.progress{height:10px;border-radius:99px;background:var(--bg2);overflow:hidden;margin:2px 0 20px;border:1px solid var(--line)}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--orange),var(--tag),var(--lime),var(--cyan));transition:width .6s cubic-bezier(.2,.9,.3,1.2)}
+
+/* Grille principale */
+.main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+@media (max-width:960px){.main{grid-template-columns:minmax(0,1fr)}}
+.stage{background:var(--card);border:3px solid var(--sc);border-radius:24px;padding:clamp(18px,3vw,38px);min-width:0;box-shadow:10px 10px 0 color-mix(in srgb,var(--sc) 45%,transparent);animation:enter .45s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes enter{from{transform:translateY(14px) scale(.98)}to{transform:none}}
+.st-head{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.badge{width:84px;height:84px;flex:0 0 auto;border-radius:22px;background:var(--sc);display:grid;place-items:center;font-size:46px;transform:rotate(-5deg);box-shadow:5px 5px 0 rgba(0,0,0,.35)}
+.eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--sc);font-weight:700;margin-bottom:4px}
+.stage h2{font-size:clamp(32px,4.4vw,56px)}
+.lead{font-size:19px;color:var(--muted);max-width:64ch;margin:10px 0 20px}
+.goal{display:inline-flex;gap:8px;align-items:center;background:rgba(255,255,255,.08);border:1px dashed var(--sc);border-radius:999px;padding:5px 14px;font-size:15px;font-weight:700;margin-top:10px}
+.goal::before{content:"🎯"}
+
+/* Carte question */
+.card{background:var(--bg2);border:2px solid var(--line);border-radius:var(--r);padding:clamp(18px,2.6vw,30px);display:flex;flex-direction:column;gap:18px}
+.q{font-family:var(--f-display);font-weight:800;font-size:clamp(23px,2.9vw,34px);line-height:1.2}
+.counter{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{border:0;background:var(--card2);border-radius:12px;padding:12px 20px;font-weight:700;box-shadow:0 5px 0 rgba(0,0,0,.4);transition:transform .08s,box-shadow .08s}
+.btn:hover{filter:brightness(1.15)}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.4)}
+.btn.primary{background:var(--cyan);color:var(--on-tag)}
+.btn.yellow{background:var(--tag);color:var(--on-tag);font-size:19px}
+.btn.ghost{background:transparent;border:2px solid var(--line);box-shadow:none}
+.btn[disabled]{opacity:.35;cursor:default;transform:none}
+.answer{border-radius:14px;padding:16px 20px;font-size:19px;animation:pop .5s cubic-bezier(.2,.9,.3,1.4)}
+.answer.ok{background:rgba(61,220,151,.16);border:3px solid var(--go)}
+.answer.no{background:rgba(255,99,99,.14);border:3px solid var(--stop)}
+.answer strong{font-family:var(--f-show);font-weight:400;font-size:40px;display:block;line-height:1}
+.answer.ok strong{color:var(--go)} .answer.no strong{color:var(--stop)}
+@keyframes pop{0%{transform:scale(.6) rotate(-3deg);opacity:0}100%{transform:none;opacity:1}}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:14px;align-items:center;border:2px solid var(--line);background:var(--card);border-radius:14px;padding:12px 16px;font-size:19px;transition:opacity .3s}
+.opt .k{flex:0 0 auto;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-family:var(--f-show);font-size:22px;color:var(--on-tag)}
+.opt:nth-child(1) .k{background:var(--pink)} .opt:nth-child(2) .k{background:var(--cyan)} .opt:nth-child(3) .k{background:var(--tag)} .opt:nth-child(4) .k{background:var(--lime)}
+.opt.good{border-color:var(--go);background:rgba(61,220,151,.16);animation:pop .5s cubic-bezier(.2,.9,.3,1.4)}
+.opt.good::after{content:"✔";margin-left:auto;color:var(--go);font-size:28px;font-weight:700}
+.opt.bad{opacity:.35}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:640px){.pair{grid-template-columns:1fr}}
+.say{border-radius:14px;padding:18px 20px;font-size:22px;font-weight:800;font-family:var(--f-display)}
+.say small{display:block;font-family:var(--f-body);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.say.bad{background:rgba(255,99,99,.14);border:3px solid var(--stop);text-decoration:line-through;text-decoration-color:rgba(255,99,99,.7)} .say.bad small{color:var(--stop);text-decoration:none}
+.say.good{background:rgba(61,220,151,.16);border:3px solid var(--go);animation:pop .5s cubic-bezier(.2,.9,.3,1.4)} .say.good small{color:var(--go)}
+.say.hide{color:var(--muted);font-weight:600;font-size:18px;display:grid;place-items:center;min-height:96px;border:3px dashed var(--line)}
+.why{color:var(--muted);font-size:17px;margin:0}
+
+/* Points */
+.award{border-top:2px dashed var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.award-l{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--tag);font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:3px solid var(--c);background:transparent;border-radius:999px;padding:7px 16px;font-weight:700;font-size:16px;transition:transform .1s}
+.chip:hover{transform:scale(1.05)}
+.chip.on{background:var(--c);color:var(--on-tag)}
+.seg{display:inline-flex;border:2px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{border:0;background:var(--card);padding:8px 14px;font-weight:700}
+.seg button.on{background:var(--tag);color:var(--on-tag)}
+
+/* Météo */
+.meteo{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.meteo{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.wx{border:2px solid var(--line);background:var(--bg2);border-radius:var(--r);padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;transition:transform .15s}
+.wx:hover{transform:translateY(-4px) rotate(-1deg);border-color:var(--sc)}
+.wx:active{transform:scale(.95)}
+.wx .e{font-size:48px;line-height:1}
+.wx b{font-size:16px}
+.wx span{font-size:13px;color:var(--muted);text-align:center}
+.wx .n{font-family:var(--f-show);font-size:34px;color:var(--sc);font-variant-numeric:tabular-nums}
+.icebreak{margin-top:22px}
+
+/* Scène */
+.scene-card{border:3px solid var(--sc);border-radius:var(--r);overflow:hidden;animation:pop .5s cubic-bezier(.2,.9,.3,1.3)}
+.scene-head{background:var(--sc);color:var(--on-tag);padding:16px 22px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.scene-head h3{font-size:clamp(26px,3vw,36px)}
+.scene-head span{font-size:15px;font-weight:700}
+.scene-body{padding:18px 22px;display:grid;gap:14px;background:var(--bg2)}
+.role{border-radius:12px;padding:12px 16px;background:var(--card);font-size:19px}
+.role small{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--cyan)}
+.role.secret{background:var(--tag);color:var(--on-tag)}
+.role.secret small{color:var(--on-tag);opacity:.7}
+.grid-obs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:640px){.grid-obs{grid-template-columns:1fr}}
+.grid-obs label{display:flex;gap:10px;align-items:center;border:2px solid var(--line);border-radius:12px;padding:9px 12px;cursor:pointer;background:var(--card)}
+.grid-obs label:has(input:checked){border-color:var(--go);background:rgba(61,220,151,.14)}
+.grid-obs input{width:22px;height:22px;accent-color:var(--go)}
+.deck{display:flex;flex-wrap:wrap;gap:6px}
+.deck i{width:18px;height:26px;border-radius:4px;background:var(--card2);border:2px solid var(--line)}
+.deck i.used{background:var(--sc);border-color:var(--sc)}
+
+/* Scores */
+.side{display:flex;flex-direction:column;gap:12px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.side h3{font-size:26px;color:var(--tag)}
+.board{display:flex;flex-direction:column;gap:10px}
+.tagrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;background:var(--card);border:2px solid var(--line);border-left:10px solid var(--c);border-radius:14px;padding:10px 10px 10px 12px}
+.tagrow.lead1{border-color:var(--tag);border-left-color:var(--c);box-shadow:0 0 22px rgba(255,210,63,.3)}
+.rk{font-family:var(--f-show);font-size:20px;color:var(--muted);width:24px;text-align:center}
+.lead1 .rk{color:var(--tag)}
+.tagrow .nm{font-weight:700;overflow-wrap:anywhere;line-height:1.2}
+.price{position:relative;background:var(--tag);color:var(--on-tag);font-family:var(--f-show);font-size:30px;font-variant-numeric:tabular-nums;padding:2px 12px 0 24px;clip-path:polygon(13px 0,100% 0,100% 100%,13px 100%,0 50%);min-width:70px;text-align:right}
+.price::before{content:"";position:absolute;left:10px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--card)}
+.price.bump{animation:bump .6s cubic-bezier(.2,.9,.3,1.6)}
+@keyframes bump{40%{transform:scale(1.35) rotate(-4deg)}}
+.adj{grid-column:1/-1;display:flex;gap:6px}
+.adj button{flex:1;border:0;background:var(--card2);border-radius:8px;padding:3px 0;font-weight:700}
+.adj button:hover{background:var(--line)}
+.note{font-size:14px;color:var(--muted);margin:0}
+.credit{font-size:14px;color:var(--muted);text-align:center;padding:12px;border:1px dashed var(--line);border-radius:12px}
+.credit b{color:var(--ink)}
+
+/* Équipes */
+.teams-edit{display:grid;gap:10px;max-width:580px}
+.team-in{display:flex;gap:10px;align-items:center}
+.team-in i{width:22px;height:22px;border-radius:50%;background:var(--c);flex:0 0 auto;box-shadow:0 0 12px var(--c)}
+.team-in input{flex:1;min-width:0;font:inherit;font-weight:700;border:2px solid var(--line);background:var(--bg2);color:var(--ink);border-radius:12px;padding:10px 14px}
+.team-in input:focus{border-color:var(--c)}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:24px}
+.rule{background:var(--bg2);border-radius:var(--r);padding:16px 18px;border-top:5px solid var(--c)}
+.rule b{font-family:var(--f-show);font-weight:400;font-size:22px;display:block;margin-bottom:4px}
+
+/* Bilan */
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:14px;margin:16px 0 28px;flex-wrap:wrap}
+.pod{display:flex;flex-direction:column;align-items:center;gap:8px;width:160px}
+.pod .crown{font-size:40px;animation:float 2s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-6px)}}
+.pod .bar{width:100%;background:var(--c);border-radius:14px 14px 0 0;display:grid;place-items:start center;padding-top:10px;color:var(--on-tag);font-family:var(--f-show);font-size:40px;animation:grow .9s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes grow{from{height:0!important}}
+.pod b{text-align:center;overflow-wrap:anywhere}
+.cmp{display:grid;gap:8px;max-width:660px}
+.cmp-row{display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center;font-size:15px}
+.cmp-bar{height:18px;border-radius:6px;background:var(--bg2);overflow:hidden}
+.cmp-bar i{display:block;height:100%;background:var(--muted)}
+.cmp-bar.end i{background:var(--cyan)}
+.starters{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.starter{border:3px dashed var(--sc);border-radius:var(--r);padding:18px;font-family:var(--f-display);font-weight:800;font-size:21px}
+.skills{display:flex;flex-wrap:wrap;gap:8px}
+.skill{border:2px solid var(--lime);border-radius:999px;padding:7px 16px;background:transparent;font-weight:700}
+.skill:hover{background:rgba(139,227,107,.15)}
+.skill .c{font-variant-numeric:tabular-nums;color:var(--lime);margin-left:8px}
+.section{margin-top:30px;display:flex;flex-direction:column;gap:12px}
+.section h3{font-size:28px}
+.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:28px;padding-top:18px;border-top:2px dashed var(--line)}
+
+/* Écran d'accueil */
+.splash{position:fixed;inset:0;z-index:50;background:var(--bg);background-image:radial-gradient(circle at 50% 30%,rgba(255,210,63,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(255,79,139,.25),transparent 45%),radial-gradient(circle at 90% 85%,rgba(46,216,240,.22),transparent 45%);overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 24px) 16px calc(env(safe-area-inset-bottom,0px) + 24px)}
+.splash-in{max-width:980px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
+.splash .kicker{display:inline-block;background:var(--pink);color:#fff;font-weight:700;border-radius:999px;padding:6px 16px;letter-spacing:.08em;text-transform:uppercase;font-size:14px;transform:rotate(-2deg)}
+.big{font-family:var(--f-show);font-size:clamp(52px,11vw,132px);line-height:.92;margin:0}
+.big span{display:inline-block;animation:drop .7s cubic-bezier(.2,.9,.3,1.4) backwards}
+.big .l1{color:#fff;text-shadow:6px 6px 0 var(--pink)}
+.big .l2{color:var(--tag);text-shadow:6px 6px 0 #6A3CF0}
+@keyframes drop{from{transform:translateY(-60px) rotate(-8deg);opacity:0}}
+.splash p.sub{font-size:clamp(18px,2.2vw,22px);color:var(--muted);max-width:52ch;margin:0}
+.by{display:flex;align-items:center;gap:12px;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:8px 20px 8px 8px}
+.by .av{width:42px;height:42px;border-radius:50%;background:var(--cyan);color:var(--on-tag);display:grid;place-items:center;font-family:var(--f-show);font-size:20px}
+.by span{font-size:15px;color:var(--muted);text-align:left;line-height:1.25}
+.by b{color:#fff;font-size:18px;display:block}
+.go-btn{font-family:var(--f-show);font-size:clamp(26px,3.4vw,36px);background:var(--tag);color:var(--on-tag);border:0;border-radius:20px;padding:16px 40px;box-shadow:0 8px 0 #B88F00,0 0 40px rgba(255,210,63,.45);animation:breathe 2.2s ease-in-out infinite}
+.go-btn:active{transform:translateY(6px);box-shadow:0 2px 0 #B88F00}
+@keyframes breathe{50%{transform:scale(1.05)}}
+.map{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;width:100%}
+.mtile{--c:var(--tag);background:var(--card);border:2px solid var(--line);border-bottom:6px solid var(--c);border-radius:14px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.mtile .e{font-size:30px}
+.mtile b{font-size:15px;line-height:1.2}
+.mtile em{font-style:normal;color:var(--muted);font-size:13px}
+
+/* Consignes */
+.intro{font-size:18px;color:var(--muted);margin:12px 0 0;max-width:68ch}
+.consigne{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 28px;background:rgba(255,255,255,.06);border:3px solid var(--sc);border-radius:18px;padding:18px 22px;margin:14px 0 24px}
+.consigne.solo{grid-template-columns:minmax(0,1fr)}
+.consigne h4{grid-column:1/-1;margin:0;font-family:var(--f-show);font-weight:400;font-size:24px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink)}
+.consigne ol{margin:0;padding:0;list-style:none;display:grid;gap:10px;counter-reset:st;min-width:0}
+.consigne li{counter-increment:st;display:flex;gap:12px;align-items:flex-start;font-size:20px;line-height:1.35}
+.consigne li::before{content:counter(st);flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:var(--sc);color:var(--on-tag);display:grid;place-items:center;font-weight:700;font-size:17px}
+.cons-side{display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-width:190px}
+.cons-side .lab{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.pcards{display:flex;gap:6px;flex-wrap:wrap;max-width:300px}
+.pcard{min-width:46px;height:58px;padding:0 10px;border-radius:8px;display:grid;place-items:center;color:#fff;font-family:var(--f-show);font-weight:400;font-size:24px;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.pts-chip{background:var(--tag);color:var(--on-tag);font-weight:700;border-radius:999px;padding:5px 14px;font-size:16px}
+@media (max-width:760px){.consigne{grid-template-columns:minmax(0,1fr)}}
+.rules-in{gap:20px}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;width:100%;text-align:left}
+.rcard{background:var(--card);border-radius:16px;padding:16px 18px;border-top:6px solid var(--c)}
+.rcard b{display:block;font-family:var(--f-show);font-weight:400;font-size:24px;text-transform:uppercase;margin-bottom:4px;color:var(--c)}
+.rcard span{font-size:17px;line-height:1.4}
+.howto{width:100%;text-align:left;background:var(--card);border-radius:16px;padding:16px 20px;display:grid;gap:10px}
+.howto ol{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:h}
+.howto li{counter-increment:h;display:flex;gap:10px;align-items:flex-start;font-size:17px}
+.howto li::before{content:counter(h);flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--tag);color:var(--on-tag);display:grid;place-items:center;font-weight:700}
+.rules-btn{font-weight:700}
+#rulescards .pcards{max-width:none}
+
+/* Nombre de joueurs */
+.players{display:flex;flex-wrap:wrap;align-items:center;gap:14px 32px;background:var(--bg2, var(--surface2));border:2px dashed var(--sc);border-radius:16px;padding:16px 22px;margin-bottom:20px}
+.players .lab{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:6px}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper .btn{width:52px;height:52px;padding:0;font-size:28px;line-height:1}
+.pl-n{min-width:2.2ch;text-align:center;font-size:44px;font-weight:800;font-variant-numeric:tabular-nums}
+.pl-r{flex:1;min-width:220px}
+.pl-plan{margin:0;font-size:24px;font-weight:800;color:var(--ink)}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:60}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<style>[hidden]{display:none!important}</style>
+</head>
+<body>
+<div id="oops" hidden style="position:fixed;inset:0;z-index:99;background:#FFF8E1;color:#1A1A1A;font:18px/1.5 Arial,sans-serif;padding:32px 20px;overflow:auto"><div style="max-width:640px;margin:0 auto"><h2 style="font-size:28px;margin:0 0 12px">Le jeu n'a pas pu démarrer</h2><p>Ce navigateur bloque ou ne comprend pas le programme du jeu.</p><p><b>Pour le lancer :</b></p><ol><li>Enregistrez le fichier sur l'ordinateur (ou sur une clé USB).</li><li>Faites un clic droit dessus, puis « Ouvrir avec » → <b>Google Chrome</b>, <b>Microsoft Edge</b> ou <b>Firefox</b>.</li><li>N'utilisez pas l'aperçu de l'ENT, de Google Drive ou de la messagerie : ils bloquent les jeux.</li></ol><p style="color:#666;font-size:14px" id="oopsmsg"></p></div></div>
+<noscript><div style="padding:24px;font:18px Arial,sans-serif;background:#FFF8E1;color:#1A1A1A">Ce jeu a besoin de JavaScript. Ouvrez le fichier directement avec Chrome, Edge ou Firefox, pas dans un aperçu.</div></noscript>
+<script>window.__ok=false;window.onerror=function(m){var o=document.getElementById("oops");if(o&&!window.__ok){o.hidden=false;o.style.display="block";var t=document.getElementById("oopsmsg");if(t)t.textContent="Détail technique : "+m}};</script>
+
+
+<div class="wrap">
+  <header class="top">
+    <button class="brand" id="home" aria-label="Revenir à l'écran d'accueil"><span class="logo" aria-hidden="true">🚀</span><span><h1>Mission <span>Confiance</span></h1><small>Parcours de soutien · 1MCVA · par <b>Marie Frison</b></small></span></button>
+    <div class="row"><button class="icon-btn rules-btn" id="showrules" style="background:var(--card);border:2px solid var(--line)">? Règles</button><div class="timer" id="timer" aria-live="polite">
+      <span class="t" id="tval">00:00</span>
+      <button class="icon-btn" id="tplay" aria-label="Lancer le chrono">▶</button>
+      <button class="icon-btn" id="treset" aria-label="Remettre le chrono à la durée de l'activité">↺</button>
+    </div></div>
+  </header>
+  <nav class="steps" id="steps" aria-label="Activités"></nav>
+  <div class="progress" aria-hidden="true"><i id="prog"></i></div>
+  <div class="main">
+    <main class="stage" id="stage"></main>
+    <aside class="side">
+      <h3>Tableau des scores</h3>
+      <div class="board" id="board"></div>
+      <p class="note">Les points se donnent dans chaque activité. Les boutons −1 / +1 / +2 servent aux bonus (entraide, courage, fair-play).</p>
+      <div class="credit">Jeu conçu par <b>Marie Frison</b><br>Bac Pro MCV · 1MCVA</div>
+    </aside>
+  </div>
+</div>
+
+<div class="splash" id="splash" hidden>
+  <div class="splash-in">
+    <span class="kicker">Parcours de soutien · 1MCVA</span>
+    <h2 class="big"><span class="l1" style="animation-delay:.05s">MISSION</span><br><span class="l2" style="animation-delay:.25s">CONFIANCE</span></h2>
+    <p class="sub">1 heure, 9 défis, des points à gagner en équipe. Objectif : oser parler aux clients, prendre confiance et révéler tes soft skills.</p>
+    <div class="by"><span class="av" aria-hidden="true">MF</span><span>Un jeu conçu par<b>Marie Frison</b></span></div>
+    <button class="go-btn" id="startgame">Lancer la mission !</button>
+    <div class="map" id="map"></div>
+  </div>
+</div>
+<div class="splash" id="rules" hidden>
+  <div class="splash-in rules-in">
+    <span class="kicker">Avant de commencer</span>
+    <h2 class="big" style="font-size:clamp(44px,8vw,104px)"><span class="l2" style="color:var(--tag)">Comment on joue ?</span></h2>
+    <div class="rgrid"><div class="rcard" style="--c:var(--tag)"><b>Les équipes</b><span><em class="tsz" style="font-style:normal">4 élèves par équipe.</em> Vos points s'affichent à droite, sur des étiquettes prix.</span></div><div class="rcard" style="--c:var(--cyan)"><b>On répond ensemble</b><span>On se concerte à voix basse. Le porte-parole change à chaque question.</span></div><div class="rcard" style="--c:var(--pink)"><b>Les points</b><span>+1 pour une bonne réponse, +2 pour une très bonne idée, des bonus pour le courage.</span></div><div class="rcard" style="--c:var(--lime)"><b>Les règles d'or</b><span>On a le droit de se tromper. Personne ne se moque. Un point fort, puis un conseil.</span></div></div>
+    <div class="howto"><b>À chaque activité :</b><ol><li>Lisez l'encadré « Ce que vous devez faire » en haut de l'écran.</li><li>Concertez-vous en équipe avant le chrono.</li><li>Répondez avec vos cartons ou par votre porte-parole.</li><li>Le professeur donne les points.</li></ol></div>
+    <div class="row" style="justify-content:center"><b>Vos cartons :</b><span id="rulescards"></span></div>
+    <button class="go-btn" id="rulesgo">C'est parti !</button>
+  </div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<script>var __defProp = Object.defineProperty;
+var __defProps = Object.defineProperties;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
+var __getOwnPropSymbols = Object.getOwnPropertySymbols;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __propIsEnum = Object.prototype.propertyIsEnumerable;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp.call(b, prop))
+      __defNormalProp(a, prop, b[prop]);
+  if (__getOwnPropSymbols)
+    for (var prop of __getOwnPropSymbols(b)) {
+      if (__propIsEnum.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    }
+  return a;
+};
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
+var _a, _b, _c, _d, _e;
+const COL = ["#4F8BFF", "#FF4F8B", "#3DDC97", "#FFB020", "#B194FF", "#2ED8F0"];
+const STATIONS = [
+  { id: "prep", t: "\xC9quipes", min: 2, ic: "\u{1F680}", c: "#FFD23F" },
+  { id: "meteo", t: "M\xE9t\xE9o int\xE9rieure", min: 4, ic: "\u26C5", c: "#2ED8F0" },
+  { id: "vf", t: "Vrai ou faux ?", min: 8, ic: "\u26A1", c: "#FF4F8B" },
+  { id: "att", t: "Quelle attitude ?", min: 6, ic: "\u{1F9CD}", c: "#FF9142" },
+  { id: "soft", t: "Soft skills", min: 8, ic: "\u{1F4A1}", c: "#8BE36B" },
+  { id: "form", t: "Formules gagnantes", min: 8, ic: "\u{1F4AC}", c: "#B194FF" },
+  { id: "scene", t: "D\xE9fi en sc\xE8ne", min: 15, ic: "\u{1F3AD}", c: "#FF6B8E" },
+  { id: "micro", t: "Micro du magasin", min: 5, ic: "\u{1F3A4}", c: "#2ED8F0" },
+  { id: "bilan", t: "Bilan", min: 4, ic: "\u{1F3C6}", c: "#FFD23F" }
+];
+const WX = [
+  { e: "\u2600\uFE0F", n: "Grand soleil", d: "J'ose aborder n'importe qui" },
+  { e: "\u{1F324}\uFE0F", n: "\xC9claircies", d: "\xC7a va, avec un peu de trac" },
+  { e: "\u2601\uFE0F", n: "Nuageux", d: "Je pr\xE9f\xE8re qu'on vienne me voir" },
+  { e: "\u{1F327}\uFE0F", n: "Pluie", d: "Parler au client me stresse" },
+  { e: "\u26C8\uFE0F", n: "Orage", d: "Je l'\xE9vite \xE0 tout prix" }
+];
+const ICE = [
+  "Raconte un moment o\xF9 tu as \xE9t\xE9 fier(e) de toi.",
+  "Qu'est-ce qui te stresse le plus face \xE0 un client ?",
+  "Un vendeur t'a marqu\xE9, en bien ou en mal : qu'a-t-il fait ?",
+  "Quelle qualit\xE9 tes amis te reconnaissent-ils ?",
+  "Ton plus gros trac\u2026 et comment tu t'en es sorti(e).",
+  "Si tu \xE9tais un produit en rayon, lequel serais-tu, et pourquoi ?",
+  "Une chose que tu as r\xE9ussie en PFMP (ou ailleurs) et dont personne ne t'a parl\xE9.",
+  "Qu'est-ce qui te donne de l'\xE9nergie avant une journ\xE9e difficile ?"
+];
+const VF = [
+  { q: "La confiance en soi, c'est inn\xE9 : on l'a ou on ne l'a pas.", a: false, w: "La confiance se travaille comme un muscle : par l'entra\xEEnement, la pr\xE9paration et les petites r\xE9ussites qu'on remarque." },
+  { q: "Un client se fait une premi\xE8re impression du vendeur en quelques secondes.", a: true, w: "C'est la r\xE8gle des 4\xD720 : les 20 premi\xE8res secondes, les 20 premiers mots, les 20 premiers pas, les 20 cm du visage (regard, sourire)." },
+  { q: "Avoir le trac avant d'aborder un client prouve qu'on n'est pas fait pour la vente.", a: false, w: "Le trac est normal, m\xEAme chez les vendeurs exp\xE9riment\xE9s. Il montre que tu veux bien faire. On le canalise par la respiration et la pr\xE9paration." },
+  { q: "Croiser les bras rassure le client parce qu'on a l'air calme.", a: false, w: "Les bras crois\xE9s envoient un message de fermeture ou de d\xE9fense. Mains visibles et posture ouverte invitent au dialogue." },
+  { q: "Respirer lentement par le ventre aide \xE0 faire baisser le stress.", a: true, w: "Inspire 4 secondes, bloque 2, expire 6. Trois fois de suite avant d'aborder un client, \xE7a calme le c\u0153ur et la voix." },
+  { q: "Dire \xAB je ne sais pas, je me renseigne \xBB fait perdre toute cr\xE9dibilit\xE9.", a: false, w: "\xCAtre honn\xEAte puis agir, c'est ce qui cr\xE9e la confiance. Inventer une r\xE9ponse, c'est ce qui la d\xE9truit." },
+  { q: "Le sourire s'entend, m\xEAme au t\xE9l\xE9phone.", a: true, w: "Sourire modifie la voix : elle devient plus chaleureuse. Essaie de dire \xAB Bonjour \xBB avec et sans sourire." },
+  { q: "Un bon vendeur, c'est quelqu'un qui parle beaucoup.", a: false, w: "Un bon vendeur \xE9coute plus qu'il ne parle. Il pose des questions ouvertes pour d\xE9couvrir les besoins du client." },
+  { q: "Se tromper fait partie de l'apprentissage.", a: true, w: "Chaque essai rat\xE9 t'apprend quelque chose. Ce qui compte : ce que tu changes la fois suivante." },
+  { q: "Se comparer aux autres aide \xE0 prendre confiance.", a: false, w: "Compare-toi \xE0 toi d'hier, pas aux autres. Note tes progr\xE8s : c'est la meilleure source de confiance." }
+];
+const ATT = [
+  { q: "Un client entre dans le magasin. Tu es en train de faire le facing d'un rayon.", o: ["Tu continues sans lever la t\xEAte : il viendra te voir s'il a besoin.", "Tu l\xE8ves la t\xEAte, tu le regardes, tu souris et tu dis \xAB Bonjour ! \xBB.", "Tu fonces vers lui et tu le suis dans les all\xE9es."], c: 1, w: "Interrompre sa t\xE2che quelques secondes pour accueillir, c'est montrer au client qu'il compte. Le suivre de trop pr\xE8s le met mal \xE0 l'aise." },
+  { q: "\xC0 quelle distance te places-tu pour aborder un client ?", o: ["Tout pr\xE8s, \xE0 moins de 50 cm, pour qu'il t'entende bien.", "Environ 1 m \xE0 1,5 m, l\xE9g\xE8rement de biais.", "Tu lui parles depuis la caisse, c'est plus pratique."], c: 1, w: "C'est la distance \xAB sociale \xBB : assez proche pour \xE9changer, assez loin pour respecter l'espace du client. \xCAtre de biais para\xEEt moins intimidant que de face." },
+  { q: "Comment utilises-tu ta voix ?", o: ["Fort et vite, pour montrer que tu es dynamique.", "Pos\xE9e, bien articul\xE9e, avec un volume adapt\xE9 au lieu.", "Doucement, en regardant le sol pour ne pas d\xE9ranger."], c: 1, w: "Une voix pos\xE9e rassure. Astuce : ralentis d'un tiers par rapport \xE0 ta vitesse normale quand tu es stress\xE9(e)." },
+  { q: "Que font tes mains pendant que tu parles au client ?", o: ["Elles sont dans les poches, c'est plus d\xE9contract\xE9.", "Elles sont visibles, avec des gestes calmes qui accompagnent tes mots.", "Elles tiennent ton t\xE9l\xE9phone, au cas o\xF9."], c: 1, w: "Des mains visibles inspirent confiance. Le t\xE9l\xE9phone en main signale au client qu'il n'est pas ta priorit\xE9." },
+  { q: "Une cliente h\xE9site depuis 5 minutes entre deux produits.", o: ["\xAB Prenez n'importe lequel, ils se valent. \xBB", "\xAB Vous allez l'utiliser comment, principalement ? \xBB", "Tu la laisses seule, elle finira bien par choisir."], c: 1, w: "Une question ouverte sur l'usage t'aide \xE0 conseiller le bon produit et montre que tu t'int\xE9resses \xE0 elle." },
+  { q: "Un client m\xE9content parle fort pr\xE8s de la caisse.", o: ["Tu montes le ton \xE0 ton tour pour te faire respecter.", "Tu l'\xE9coutes sans couper, tu reformules, puis tu proposes une solution.", "\xAB Ce n'est pas ma faute, voyez avec le responsable. \xBB"], c: 1, w: "\xC9couter, reformuler (\xAB Si je comprends bien\u2026 \xBB), proposer. Le client se calme quand il se sent entendu." }
+];
+const SKILLS = ["\xC9coute active", "Empathie", "Adaptabilit\xE9", "Gestion du stress", "Esprit d'\xE9quipe", "Fiabilit\xE9", "Prise d'initiative", "Communication claire"];
+const SOFT = [
+  { q: "Un client raconte longuement sa panne de machine \xE0 caf\xE9. Tu le laisses finir, tu hoches la t\xEAte, puis tu r\xE9sumes : \xAB Donc elle coule, mais l'eau reste froide ? \xBB", c: "\xC9coute active", o: ["\xC9coute active", "Prise d'initiative", "Fiabilit\xE9", "Adaptabilit\xE9"], w: "Laisser parler, montrer qu'on suit, puis reformuler : ce sont les trois gestes de l'\xE9coute active." },
+  { q: "Une cliente paniqu\xE9e cherche un cadeau pour le lendemain. Tu lui dis : \xAB Je comprends, c'est stressant. On va trouver ensemble. \xBB", c: "Empathie", o: ["Gestion du stress", "Empathie", "Communication claire", "Esprit d'\xE9quipe"], w: "Tu te mets \xE0 sa place et tu le lui montres. L'empathie, c'est comprendre l'\xE9motion de l'autre." },
+  { q: "Gros rush du samedi : ton responsable te demande de quitter le rayon textile pour aller en caisse. Tu y vas tout de suite, sans r\xE2ler.", c: "Adaptabilit\xE9", o: ["Fiabilit\xE9", "Adaptabilit\xE9", "Empathie", "\xC9coute active"], w: "Changer de poste ou de t\xE2che selon les besoins du magasin, c'est l'adaptabilit\xE9. Les recruteurs l'adorent." },
+  { q: "Quinze personnes attendent en caisse, un client s'\xE9nerve. Tu respires, tu gardes le sourire et tu continues \xE0 encaisser sans erreur.", c: "Gestion du stress", o: ["Gestion du stress", "Prise d'initiative", "Empathie", "Esprit d'\xE9quipe"], w: "Rester efficace et poli sous pression : c'est la gestion du stress, et elle se travaille." },
+  { q: "Ta coll\xE8gue est d\xE9bord\xE9e par la mise en rayon apr\xE8s une livraison. Une fois ta t\xE2che finie, tu lui proposes ton aide.", c: "Esprit d'\xE9quipe", o: ["Adaptabilit\xE9", "Communication claire", "Esprit d'\xE9quipe", "Fiabilit\xE9"], w: "Dans un magasin, on r\xE9ussit ensemble. Proposer son aide sans qu'on le demande, c'est l'esprit d'\xE9quipe." },
+  { q: "En PFMP, tu arrives 10 minutes avant ton service, en tenue, et tu fais ce que tu avais promis la veille.", c: "Fiabilit\xE9", o: ["Fiabilit\xE9", "Gestion du stress", "\xC9coute active", "Prise d'initiative"], w: "Ponctualit\xE9, tenue, parole tenue : la fiabilit\xE9, c'est ce qui fait qu'on te confie plus de responsabilit\xE9s." },
+  { q: "Tu remarques qu'une \xE9tiquette prix ne correspond pas au prix en caisse. Tu le signales \xE0 ton responsable sans attendre qu'on te le demande.", c: "Prise d'initiative", o: ["Esprit d'\xE9quipe", "Prise d'initiative", "Empathie", "Adaptabilit\xE9"], w: "Rep\xE9rer un probl\xE8me et agir, c'est la prise d'initiative. Ici, tu \xE9vites aussi un litige avec un client." },
+  { q: "Un client \xE2g\xE9 ne comprend pas la carte de fid\xE9lit\xE9. Tu lui expliques en deux phrases simples, sans jargon, et tu v\xE9rifies qu'il a compris.", c: "Communication claire", o: ["Communication claire", "\xC9coute active", "Fiabilit\xE9", "Gestion du stress"], w: "Adapter ses mots \xE0 la personne, faire court et v\xE9rifier la compr\xE9hension : c'est communiquer clairement." }
+];
+const FORM = [
+  { b: "Je peux vous aider ?", g: "Bonjour ! Vous cherchez quelque chose pour une occasion particuli\xE8re ?", w: "\xAB Je peux vous aider ? \xBB appelle un \xAB Non merci, je regarde \xBB. Une question ouverte lance la conversation." },
+  { b: "Pas de probl\xE8me.", g: "Avec plaisir !", w: "\xC9vite les mots n\xE9gatifs : le cerveau du client retient \xAB probl\xE8me \xBB." },
+  { b: "Je ne sais pas.", g: "Bonne question ! Je me renseigne tout de suite pour vous.", w: "Tu restes honn\xEAte et tu montres que tu passes \xE0 l'action." },
+  { b: "C'est pas possible.", g: "Voici ce que je peux vous proposer\u2026", w: "Le client entend une solution au lieu d'un refus." },
+  { b: "Attendez.", g: "Je suis \xE0 vous dans un instant, merci de votre patience.", w: "M\xEAme message, mais le client se sent respect\xE9." },
+  { b: "C'est pas cher.", g: "C'est un tr\xE8s bon rapport qualit\xE9-prix.", w: "On valorise le produit au lieu de parler du prix de fa\xE7on n\xE9gative." },
+  { b: "Vous avez tort.", g: "Je comprends. Permettez-moi de vous pr\xE9ciser un point\u2026", w: "On ne met jamais le client en d\xE9faut : on compl\xE8te l'information." },
+  { b: "Je vais essayer.", g: "Je m'en occupe.", w: "\xAB Essayer \xBB sonne comme un \xE9chec annonc\xE9. \xAB Je m'en occupe \xBB rassure." },
+  { b: "Il faut que vous passiez en caisse 3.", g: "Je vous propose de passer en caisse 3, c'est la plus rapide.", w: "On propose au lieu d'ordonner, et on donne la raison." }
+];
+const SCENES = [
+  { t: "Le client \xAB qui regarde juste \xBB", l: "Boutique de pr\xEAt-\xE0-porter", v: "Aborde le client et engage la conversation malgr\xE9 son \xAB Je regarde \xBB.", s: "Tu r\xE9ponds \xAB Je regarde \xBB \xE0 la premi\xE8re question. Si le vendeur pose une question ouverte et sympa, tu te d\xE9tends et tu parles d'un mariage o\xF9 tu es invit\xE9(e)." },
+  { t: "Le client press\xE9", l: "Rayon cadeaux", v: "Trouve un cadeau en moins de 2 minutes, sans brusquer le client.", s: "Tu as 5 minutes avant ton bus. C'est l'anniversaire de ta s\u0153ur de 15 ans. Tu regardes ta montre souvent." },
+  { t: "L'h\xE9sitant", l: "Rayon high-tech", v: "Aide le client \xE0 choisir entre deux casques audio.", s: "Tu h\xE9sites entre deux casques (49 \u20AC et 89 \u20AC). Tu \xE9coutes de la musique dans le bus et tu fais du sport. Tu ne donnes ces infos que si on te pose des questions." },
+  { t: "Le client m\xE9content", l: "Accueil du magasin", v: "G\xE8re la r\xE9clamation et propose une solution.", s: "Ta bouilloire achet\xE9e il y a une semaine ne chauffe plus. Tu es \xE9nerv\xE9(e) au d\xE9but, tu te calmes si le vendeur t'\xE9coute et reformule." },
+  { t: "La cliente timide", l: "Rayon parfumerie", v: "Rep\xE8re la cliente qui n'ose pas demander et mets-la \xE0 l'aise.", s: "Tu tournes autour du rayon sans oser demander. Tu cherches un parfum pour ta m\xE8re. Tu parles tr\xE8s doucement." },
+  { t: "La rupture de stock", l: "All\xE9e centrale, produit en promo", v: "Annonce que le produit du prospectus est \xE9puis\xE9 et propose une alternative.", s: "Tu viens expr\xE8s pour la promo du prospectus. Tu es d\xE9\xE7u(e). Tu acceptes une solution si on te la pr\xE9sente bien." },
+  { t: "Interrompu en pleine mise en rayon", l: "Rayon \xE9picerie", v: "Accueille le client alors que tu es occup\xE9(e), puis renseigne-le.", s: "Tu cherches le rayon sans gluten. Tu n'aimes pas qu'on te r\xE9ponde sans te regarder." },
+  { t: "Le client \xE2g\xE9", l: "Rayon bricolage", v: "Aide le client \xE0 lire une \xE9tiquette et \xE0 comparer deux produits.", s: "Tu n'as pas tes lunettes. Tu veux une ampoule \xAB comme l'ancienne \xBB que tu tiens \xE0 la main. Tu parles lentement." }
+];
+const OBS = ["\xAB Bonjour \xBB + sourire", "Regard dans les yeux", "Posture ouverte, mains visibles", "Question ouverte pos\xE9e", "\xC9coute et reformulation", "Prise de cong\xE9 soign\xE9e"];
+const MICRO = [
+  "Annonce au micro : la promotion du jour sur un produit de ton choix.",
+  "Vends un objet de ta trousse au groupe en 30 secondes.",
+  "Pr\xE9sente-toi \xE0 un client comme le jour de l'ouverture du magasin.",
+  "Annonce au micro : le magasin ferme dans 15 minutes. Reste aimable !",
+  "Dis une de tes qualit\xE9s et donne un exemple concret qui le prouve.",
+  "Accueille un groupe de clients qui entre en m\xEAme temps.",
+  "Pr\xE9sente ton futur magasin id\xE9al comme si tu le faisais visiter.",
+  "Fais le compliment sinc\xE8re d'une qualit\xE9 \xE0 un camarade de ton choix."
+];
+function blank() {
+  return { teams: ["Les T\xEAtes de gondole", "Les Promos", "Les Facings", "Les Caddies"].map((n) => ({ name: n, score: 0 })), st: 0, done: {}, idx: { vf: 0, att: 0, soft: 0, form: 0 }, rev: {}, aw: {}, wxMode: "start", wx: { start: [0, 0, 0, 0, 0], end: [0, 0, 0, 0, 0] }, ice: -1, deck: [], scene: -1, obs: {}, micro: -1, microPts: 1, skills: {} };
+}
+let S;
+function save() {
+  try {
+    localStorage.setItem("mc1mcva", JSON.stringify(S));
+  } catch (e) {
+  }
+}
+function load() {
+  try {
+    const r = localStorage.getItem("mc1mcva");
+    if (r) return Object.assign(blank(), JSON.parse(r));
+  } catch (e) {
+  }
+  return null;
+}
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const fmt = (s) => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+let tLeft = 0, tRun = null, ac = null;
+function setTimer(sec, start2) {
+  clearInterval(tRun);
+  tRun = null;
+  tLeft = sec;
+  $("#timer").classList.remove("done");
+  drawT();
+  if (start2) play();
+}
+function drawT() {
+  $("#tval").textContent = fmt(tLeft);
+  $("#timer").classList.toggle("low", tRun != null && tLeft <= 10 && tLeft > 0);
+  if (tRun && tLeft <= 5 && tLeft > 0) tick();
+  $("#tplay").textContent = tRun ? "\u23F8" : "\u25B6";
+  $("#tplay").setAttribute("aria-label", tRun ? "Mettre en pause" : "Lancer le chrono");
+}
+function play() {
+  if (tRun) {
+    clearInterval(tRun);
+    tRun = null;
+    drawT();
+    return;
+  }
+  if (tLeft <= 0) return;
+  tRun = setInterval(() => {
+    tLeft--;
+    if (tLeft <= 0) {
+      tLeft = 0;
+      clearInterval(tRun);
+      tRun = null;
+      $("#timer").classList.add("done");
+      beep();
+    }
+    drawT();
+  }, 1e3);
+  drawT();
+}
+function beep() {
+  try {
+    ensureAudio();
+    [0, 0.25, 0.5].forEach((d) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.frequency.value = 880;
+      o.connect(g);
+      g.connect(ac.destination);
+      g.gain.setValueAtTime(0.2, ac.currentTime + d);
+      g.gain.exponentialRampToValueAtTime(1e-3, ac.currentTime + d + 0.2);
+      o.start(ac.currentTime + d);
+      o.stop(ac.currentTime + d + 0.22);
+    });
+  } catch (e) {
+  }
+}
+$("#tplay").onclick = play;
+$("#treset").onclick = () => setTimer(STATIONS[S.st].min * 60);
+function drawBoard(bumpI) {
+  const ranks = S.teams.map((t) => 1 + S.teams.filter((u) => u.score > t.score).length);
+  const top = Math.max(...S.teams.map((t) => t.score));
+  $("#board").innerHTML = S.teams.map((t, i) => `<div class="tagrow ${t.score === top && top > 0 ? "lead1" : ""}" style="--c:${COL[i]}"><span class="rk">${t.score === top && top > 0 ? "\u{1F451}" : ranks[i]}</span><span class="nm">${esc(t.name)}</span><span class="price ${bumpI === i ? "bump" : ""}">${t.score}</span><div class="adj"><button data-adj="${i}|-1" aria-label="Retirer un point \xE0 ${esc(t.name)}">\u22121</button><button data-adj="${i}|1" aria-label="Ajouter un point \xE0 ${esc(t.name)}">+1</button><button data-adj="${i}|2" aria-label="Ajouter deux points \xE0 ${esc(t.name)}">+2</button></div></div>`).join("");
+}
+function addPts(i, p) {
+  S.teams[i].score += p;
+  save();
+  drawBoard(i);
+}
+function awardHTML(key, label, pts) {
+  return `<div class="award"><span class="award-l">${label}</span><div class="chips">${S.teams.map((t, i) => {
+    const k = key + "|" + i;
+    return `<button class="chip ${S.aw[k] != null ? "on" : ""}" style="--c:${COL[i]}" data-aw="${k}" data-i="${i}" ${pts != null ? `data-pts="${pts}"` : ""}>${esc(t.name)}${S.aw[k] != null ? " +" + S.aw[k] : ""}</button>`;
+  }).join("")}</div></div>`;
+}
+function drawSteps() {
+  $("#steps").innerHTML = STATIONS.map((s, i) => `<button class="step ${i === S.st ? "on" : ""} ${S.done[i] && i !== S.st ? "done" : ""}" style="--c:${s.c}" data-go="${i}"><span class="ic" aria-hidden="true">${S.done[i] && i !== S.st ? "\u2713" : s.ic}</span><span><b>${s.t}</b><em>${s.min} min</em></span></button>`).join("");
+  const n = Object.keys(S.done).filter((k) => S.done[k]).length;
+  $("#prog").style.width = Math.min(100, 100 * Math.max(n, S.st) / (STATIONS.length - 1)) + "%";
+}
+function go(i) {
+  S.done[S.st] = S.st !== i ? true : S.done[S.st];
+  S.st = i;
+  save();
+  drawSteps();
+  render();
+  setTimer(STATIONS[i].min * 60);
+  const sg = $("#stage");
+  sg.style.animation = "none";
+  sg.offsetWidth;
+  sg.style.animation = "";
+  if (STATIONS[i].id === "bilan") setTimeout(() => {
+    fanfare();
+    for (let k = 0; k < 4; k++) setTimeout(() => burst(innerWidth * (0.2 + 0.2 * k), innerHeight * 0.35, 90), k * 250);
+  }, 400);
+  const on = $(".step.on");
+  on && on.scrollIntoView({ block: "nearest", inline: "center" });
+  window.scrollTo({ top: 0 });
+}
+function foot() {
+  const p = S.st > 0 ? `<button class="btn ghost" data-go="${S.st - 1}">\u2190 ${STATIONS[S.st - 1].t}</button>` : "<span></span>";
+  const n = S.st < STATIONS.length - 1 ? `<button class="btn primary" data-go="${S.st + 1}">Activit\xE9 suivante : ${STATIONS[S.st + 1].t} \u2192</button>` : "";
+  return `<div class="foot">${p}${n}</div>`;
+}
+function head(eb, title, lead, goal) {
+  const x = STATIONS[S.st];
+  return `<div class="st-head"><span class="badge" aria-hidden="true">${x.ic}</span><div><div class="eyebrow">Mission ${S.st} \xB7 ${eb}</div><h2>${title}</h2>${goal ? `<div class="goal">Objectif : ${goal}</div>` : ""}</div></div>${consHTML(STATIONS[S.st].id, lead)}`;
+}
+const R = {};
+R.prep = () => head("Avant de commencer", "Composez vos \xE9quipes", "Formez 3 \xE0 6 \xE9quipes. Chaque \xE9quipe choisit un nom de rayon, de magasin ou de produit. Pendant une heure, vous gagnez des points en osant, en r\xE9fl\xE9chissant ensemble et en vous encourageant.", "se mettre en route en confiance") + `${playersHTML()}<div class="teams-edit">${S.teams.map((t, i) => `<div class="team-in" style="--c:${COL[i]}"><i></i><input id="team${i}" aria-label="Nom de l'\xE9quipe ${i + 1}" data-team="${i}" value="${esc(t.name)}" maxlength="28"><button class="btn ghost" data-delteam="${i}" ${S.teams.length <= 2 ? "disabled" : ""} aria-label="Supprimer l'\xE9quipe">\u2715</button></div>`).join("")}
+ <div class="row"><button class="btn" id="addteam" ${S.teams.length >= 6 ? "disabled" : ""}>+ Ajouter une \xE9quipe</button></div></div>
+ <div class="rules">
+  <div class="rule" style="--c:var(--pink)"><b>On a le droit de se tromper</b>Une erreur, c'est un essai. Personne ne se moque.</div>
+  <div class="rule" style="--c:var(--cyan)"><b>On encourage</b>Apr\xE8s chaque passage : un point fort et un conseil, dans cet ordre.</div>
+  <div class="rule" style="--c:var(--lime)"><b>Les bonus</b>Courage, entraide et fair-play rapportent des points en plus.</div>
+ </div>` + foot();
+R.meteo = () => {
+  const m = S.wxMode, t = S.wx[m];
+  return head("\xC9chauffement", "M\xE9t\xE9o int\xE9rieure", "Quand tu dois parler \xE0 un client, quel temps fait-il dans ta t\xEAte ? Chaque \xE9l\xE8ve vient cliquer sur sa m\xE9t\xE9o. C'est anonyme : on regarde juste le ciel de la classe.", "mettre des mots sur ce qu'on ressent") + `<div class="row" style="margin-bottom:14px"><div class="seg" role="group" aria-label="Moment du vote"><button data-wxmode="start" class="${m === "start" ? "on" : ""}">D\xE9but de s\xE9ance</button><button data-wxmode="end" class="${m === "end" ? "on" : ""}">Fin de s\xE9ance</button></div><button class="btn ghost" id="wxundo">Effacer ce vote</button></div>
+ <div class="meteo">${WX.map((w, i) => `<button class="wx" data-wx="${i}"><span class="e" aria-hidden="true">${w.e}</span><b>${w.n}</b><span>${w.d}</span><span class="n">${t[i]}</span></button>`).join("")}</div>
+ <div class="icebreak card"><div class="eyebrow" style="margin:0">Question brise-glace</div><div class="q">${S.ice < 0 ? "Tire une question : un volontaire de chaque \xE9quipe y r\xE9pond en une phrase." : esc(ICE[S.ice])}</div><div class="row"><button class="btn yellow" id="icedraw">Tirer une question</button></div>${awardHTML("ice" + S.ice, "Bonus courage : +1 pour l'\xE9quipe du volontaire", 1)}</div>` + foot();
+};
+function quizNav(key, len) {
+  const i = S.idx[key];
+  return `<div class="row"><button class="btn ghost" data-qprev="${key}" ${i === 0 ? "disabled" : ""}>\u2190 Pr\xE9c\xE9dente</button><button class="btn primary" data-qnext="${key}" ${i >= len - 1 ? "disabled" : ""}>Question suivante \u2192</button><span class="counter">Question ${i + 1} sur ${len}</span></div>`;
+}
+R.vf = () => {
+  const i = S.idx.vf, x = VF[i], k = "vf" + i, r = S.rev[k];
+  return head("Quiz en \xE9quipe", "Vrai ou faux ?", "Chaque \xE9quipe se concerte 20 secondes, puis l\xE8ve le carton Vrai ou Faux en m\xEAme temps. On r\xE9v\xE8le ensuite la r\xE9ponse.", "casser les id\xE9es re\xE7ues sur la confiance") + `<div class="card"><div class="counter">Affirmation ${i + 1}</div><div class="q">\xAB ${x.q} \xBB</div>
+ ${r ? `<div class="answer ${x.a ? "ok" : "no"}"><strong>${x.a ? "VRAI" : "FAUX"}</strong>${x.w}</div>${awardHTML(k, "\xC9quipes qui ont trouv\xE9 (+1)", 1)}` : `<div class="row"><button class="btn yellow" data-reveal="${k}">R\xE9v\xE9ler la r\xE9ponse</button><button class="btn ghost" data-timer="20">Chrono 20 s</button></div>`}
+ ${quizNav("vf", VF.length)}</div>` + foot();
+};
+function mcq(key, arr, title, eb, lead, goal, letters) {
+  const i = S.idx[key], x = arr[i], k = key + i, r = S.rev[k];
+  return head(eb, title, lead, goal) + `<div class="card"><div class="counter">Situation ${i + 1}</div><div class="q">${x.q}</div>
+ <div class="opts">${x.o.map((o, j) => `<div class="opt ${r ? j === x.c ? "good" : "bad" : ""}"><span class="k">${"ABCD"[j]}</span><span>${o}</span></div>`).join("")}</div>
+ ${r ? `<p class="why">${x.w}</p>${awardHTML(k, "\xC9quipes qui ont trouv\xE9 (+1)", 1)}` : `<div class="row"><button class="btn yellow" data-reveal="${k}">R\xE9v\xE9ler la bonne r\xE9ponse</button><button class="btn ghost" data-timer="30">Chrono 30 s</button></div>`}
+ ${quizNav(key, arr.length)}</div>` + foot();
+}
+R.att = () => mcq("att", ATT.map((x, i) => {
+  const n = x.o.length, r = [0, 2, 1, 0, 2, 1][i] % n;
+  const o = x.o.map((_, j) => x.o[(j + n - r) % n]);
+  return __spreadProps(__spreadValues({}, x), { o, c: (x.c + r) % n });
+}), "Quelle attitude ?", "Langage du corps", "Le client lit ton attitude avant d'\xE9couter tes mots. Chaque \xE9quipe annonce sa lettre, puis un volontaire vient mimer la bonne attitude devant la classe.", "soigner son non-verbal");
+R.soft = () => {
+  const s = SOFT.map((x) => ({ q: x.q, o: x.o, c: x.o.indexOf(x.c), w: x.w }));
+  return mcq("soft", s, "Soft skills : qui fait quoi ?", "Savoir-\xEAtre", "Les soft skills, ce sont les qualit\xE9s humaines que les employeurs recherchent autant que les comp\xE9tences techniques. Quelle soft skill le vendeur utilise-t-il dans chaque situation ?", "reconna\xEEtre ses savoir-\xEAtre pour mieux les valoriser");
+};
+R.form = () => {
+  const i = S.idx.form, x = FORM[i], k = "form" + i, r = S.rev[k];
+  return head("Les mots qui vendent", "Formules gagnantes", "Voici une phrase maladroite qu'on entend souvent en magasin. Chaque \xE9quipe propose \xE0 voix haute une version plus positive. Le professeur donne le point \xE0 la meilleure proposition, puis on r\xE9v\xE8le notre version.", "oser parler avec des mots qui rassurent") + `<div class="card"><div class="counter">Phrase ${i + 1} sur ${FORM.length}</div><div class="pair"><div class="say bad"><small>\xC0 \xE9viter</small>\xAB ${x.b} \xBB</div>${r ? `<div class="say good"><small>\xC0 dire</small>\xAB ${x.g} \xBB</div>` : `<div class="say hide">\xC0 vous de reformuler\u2026</div>`}</div>
+ ${r ? `<p class="why">${x.w}</p>` : `<div class="row"><button class="btn yellow" data-reveal="${k}">R\xE9v\xE9ler une formule gagnante</button><button class="btn ghost" data-timer="45">Chrono 45 s</button></div>`}
+ ${awardHTML(k, "Meilleure proposition (+2)", 2)}${quizNav("form", FORM.length)}</div>` + foot();
+};
+R.scene = () => {
+  const c = S.scene, x = SCENES[c], o = S.obs[c] || [], pts = o.length;
+  return head("Jeu de r\xF4le", "D\xE9fi en sc\xE8ne", "Une \xE9quipe envoie un vendeur, une autre \xE9quipe envoie un client. On tire une situation, le client lit sa consigne secr\xE8te, et c'est parti pour 2 minutes. La classe observe avec la grille : chaque crit\xE8re r\xE9ussi rapporte 1 point \xE0 l'\xE9quipe du vendeur.", "oser aborder et conseiller un client") + `<div class="row" style="margin-bottom:14px"><button class="btn yellow" id="drawscene" ${S.deck.length >= SCENES.length ? "disabled" : ""}>Tirer une situation</button><div class="deck" aria-label="${S.deck.length} situations jou\xE9es sur ${SCENES.length}">${SCENES.map((_, j) => `<i class="${S.deck.includes(j) ? "used" : ""}"></i>`).join("")}</div><span class="counter">${S.deck.length} / ${SCENES.length} jou\xE9es</span></div>
+ ${c < 0 ? `<div class="card"><div class="q">Tire une situation pour commencer.</div><p class="why">Conseil : avant de jouer, le vendeur prend trois respirations lentes (4 s inspire, 6 s expire).</p></div>` : `<div class="scene-card"><div class="scene-head"><h3>${x.t}</h3><span>${x.l}</span></div><div class="scene-body">
+  <div class="role"><small>Mission du vendeur</small>${x.v}</div>
+  ${S.rev["sc" + c] ? `<div class="role secret"><small>Consigne secr\xE8te du client</small>${x.s}</div>` : `<div class="row"><button class="btn" data-reveal="sc${c}">Afficher la consigne du client</button><span class="note">\xC0 montrer au joueur client uniquement, ou \xE0 lire \xE0 voix basse.</span></div>`}
+  <div class="row"><button class="btn primary" data-timer="120" data-go-now="1">Lancer le chrono 2 min</button></div>
+  <div><div class="award-l" style="margin-bottom:8px">Grille d'observation (la classe vote crit\xE8re par crit\xE8re)</div><div class="grid-obs">${OBS.map((t, j) => `<label><input type="checkbox" id="obs${c}_${j}" data-obs="${j}" ${o.includes(j) ? "checked" : ""}> ${t}</label>`).join("")}</div></div>
+  <p class="why">Retour de la classe : un point fort, puis un conseil. Le client dit aussi comment il s'est senti.</p>
+  ${awardHTML("sc" + c + "pts", `Donner ${pts} point${pts > 1 ? "s" : ""} \xE0 l'\xE9quipe du vendeur`, pts)}
+  ${awardHTML("sc" + c + "cl", "Bonus client bien jou\xE9 (+1)", 1)}
+ </div></div>`}` + foot();
+};
+R.micro = () => {
+  const m = S.micro;
+  return head("Prise de parole", "Le micro du magasin", "Un \xE9l\xE8ve par \xE9quipe tire un d\xE9fi et prend la parole 30 secondes devant le groupe, comme au micro du magasin. Debout, regard vers la salle, voix pos\xE9e. Le groupe applaudit chaque passage.", "parler devant les autres sans perdre ses moyens") + `<div class="card"><div class="eyebrow" style="margin:0">D\xE9fi 30 secondes</div><div class="q">${m < 0 ? "Tire un d\xE9fi pour lancer le premier passage." : MICRO[m]}</div>
+ <div class="row"><button class="btn yellow" id="drawmicro">Tirer un d\xE9fi</button><button class="btn primary" data-timer="30" data-go-now="1">Lancer 30 s</button></div>
+ ${m < 0 ? "" : `<div class="row"><span class="award-l">Points pour ce passage</span><div class="seg" role="group" aria-label="Points">${[1, 2, 3].map((p) => `<button data-mpts="${p}" class="${S.microPts === p ? "on" : ""}">+${p}</button>`).join("")}</div></div>
+ <p class="note">+1 : j'ai os\xE9 \xB7 +2 : voix et regard ma\xEEtris\xE9s \xB7 +3 : convaincant du d\xE9but \xE0 la fin</p>
+ ${awardHTML("mic" + (S.micN || 0), "\xC9quipe de l'orateur", S.microPts)}`}</div>` + foot();
+};
+R.bilan = () => {
+  const sorted = S.teams.map((t, i) => __spreadProps(__spreadValues({}, t), { i })).sort((a, b) => b.score - a.score);
+  const max = Math.max(1, ...sorted.map((t) => t.score));
+  const order = sorted.length >= 3 ? [sorted[1], sorted[0], sorted[2]] : sorted;
+  const st = S.wx.start, en = S.wx.end, ts = Math.max(1, st.reduce((a, b) => a + b, 0)), te = Math.max(1, en.reduce((a, b) => a + b, 0));
+  return head("Pour finir", "Bilan de la mission", "On regarde le chemin parcouru. Chacun repart avec une phrase et une soft skill \xE0 mettre en avant en PFMP.", "repartir avec une r\xE9ussite en t\xEAte") + `<div class="podium">${order.map((t) => `<div class="pod" style="--c:${COL[t.i]}">${t === sorted[0] && t.score > 0 ? '<span class="crown" aria-hidden="true">\u{1F451}</span>' : ""}<b>${esc(t.name)}</b><div class="bar" style="height:${60 + 120 * t.score / max}px">${t.score}</div></div>`).join("")}</div>
+ <div class="section"><h3>La m\xE9t\xE9o a-t-elle chang\xE9 ?</h3><p class="note">Faites revoter la classe dans \xAB M\xE9t\xE9o int\xE9rieure \xBB, bouton \xAB Fin de s\xE9ance \xBB.</p>
+ <div class="cmp"><div class="cmp-row"><span></span><span class="award-l">D\xE9but</span><span class="award-l">Fin</span></div>${WX.map((w, i) => `<div class="cmp-row"><span>${w.n}</span><div class="cmp-bar"><i style="width:${100 * st[i] / ts}%"></i></div><div class="cmp-bar end"><i style="width:${100 * en[i] / te}%"></i></div></div>`).join("")}</div></div>
+ <div class="section"><h3>Ma soft skill forte</h3><p class="note">Chaque \xE9l\xE8ve vient cliquer sur la qualit\xE9 qu'il a montr\xE9e aujourd'hui.</p><div class="skills">${SKILLS.map((s) => `<button class="skill" data-skill="${esc(s)}">${s}<span class="c">${S.skills[s] || 0}</span></button>`).join("")}</div></div>
+ <div class="section"><h3>Je repars avec\u2026</h3><div class="starters"><div class="starter">Aujourd'hui, j'ai os\xE9\u2026</div><div class="starter">La formule que je vais r\xE9utiliser en PFMP : \u2026</div><div class="starter">Avant d'aborder un client, je vais\u2026</div></div></div>
+ <div class="section"><div class="row">${S.confirmReset ? `<span>Tout effacer (\xE9quipes, scores, votes) ?</span><button class="btn" id="resetyes" style="border-color:var(--stop);color:var(--stop)">Oui, nouvelle partie</button><button class="btn ghost" id="resetno">Annuler</button>` : `<button class="btn ghost" id="reset">Nouvelle partie</button>`}</div></div><p class="note" style="margin-top:20px">Mission Confiance \xB7 jeu con\xE7u par Marie Frison pour la classe de 1MCVA.</p>` + foot();
+};
+function render() {
+  const st = $("#stage");
+  st.style.setProperty("--sc", STATIONS[S.st].c);
+  st.innerHTML = R[STATIONS[S.st].id]();
+  updTeamText();
+}
+const CONS = {
+  prep: () => {
+    const p = curPlan();
+    return { intro: "Bienvenue dans Mission Confiance ! Pendant 1 heure, vous allez vous entra\xEEner \xE0 oser parler aux clients.", steps: p.solo ? ["Le professeur indique le nombre de joueurs.", "Chacun joue pour soi : tapez votre pr\xE9nom \xE0 la place de \xAB Joueur \xBB.", "Prenez vos cartons : VRAI, FAUX, A, B, C, D."] : ["Le professeur indique le nombre de joueurs.", "Formez " + sizesText(p) + ".", "Choisissez un nom d'\xE9quipe et donnez-le au professeur.", "Prenez vos cartons : VRAI, FAUX, A, B, C, D."], cards: ["VRAI", "FAUX", "A", "B", "C", "D"], pts: "Affich\xE9s \xE0 droite" };
+  },
+  meteo: { steps: ["Pensez \xE0 cette question : face \xE0 un client, comment je me sens ?", "Venez un par un cliquer sur votre m\xE9t\xE9o. C'est anonyme.", "Ensuite, un volontaire par \xE9quipe r\xE9pond \xE0 la question brise-glace."], pts: "+1 bonus courage" },
+  vf: { steps: ["Lisez la phrase \xE0 voix haute.", "Discutez 20 secondes dans l'\xE9quipe, \xE0 voix basse.", "Au signal, toutes les \xE9quipes l\xE8vent leur carton en m\xEAme temps.", "Le professeur r\xE9v\xE8le la r\xE9ponse."], cards: ["VRAI", "FAUX"], pts: "+1 si c'est juste" },
+  att: { steps: ["Lisez la situation.", "Choisissez la meilleure attitude en \xE9quipe (30 secondes).", "Au signal, levez votre carton.", "Un volontaire vient mimer la bonne attitude."], cards: ["A", "B", "C"], pts: "+1 si c'est juste" },
+  soft: { intro: "Les soft skills, ce sont les qualit\xE9s humaines que les employeurs recherchent : \xE9coute, empathie, fiabilit\xE9\u2026", steps: ["Lisez la situation.", "Trouvez quelle qualit\xE9 le vendeur utilise (30 secondes).", "Au signal, levez votre carton."], cards: ["A", "B", "C", "D"], pts: "+1 si c'est juste" },
+  form: { steps: ["Lisez la phrase \xE0 \xE9viter.", "En \xE9quipe, inventez une phrase plus positive (45 secondes).", "Votre porte-parole la dit \xE0 voix haute.", "Le professeur r\xE9v\xE8le une formule gagnante."], pts: "+2 pour la meilleure phrase" },
+  scene: { steps: ["Une \xE9quipe envoie un vendeur, une autre \xE9quipe un client (en petit groupe : deux joueurs).", "Le client lit sa consigne secr\xE8te sans la montrer.", "Vous jouez la sc\xE8ne pendant 2 minutes.", "La classe coche la grille : 1 crit\xE8re r\xE9ussi = 1 point.", "On donne un point fort, puis un conseil."], pts: "Jusqu'\xE0 +6 pour le vendeur" },
+  micro: { steps: ["Un \xE9l\xE8ve par \xE9quipe vient devant la classe.", "Il tire un d\xE9fi.", "Il parle 30 secondes, debout, en regardant la classe.", "Tout le monde applaudit !"], pts: "+1 \xE0 +3" },
+  bilan: { steps: ["Regardez le podium.", "Revotez la m\xE9t\xE9o (bouton \xAB Fin de s\xE9ance \xBB) et comparez.", "Chacun vient cliquer sur sa soft skill forte.", "Compl\xE9tez une phrase \xAB Je repars avec\u2026 \xBB."] }
+};
+const CARDC = { VRAI: "#0E8A5F", FAUX: "#C7362F", A: "#1F4FC4", B: "#C4006B", C: "#5B3CC4", D: "#B35A00" };
+function cardsHTML(list) {
+  return `<div class="pcards">${list.map((k) => `<span class="pcard" style="background:${CARDC[k]}">${k}</span>`).join("")}</div>`;
+}
+function consHTML(id, lead) {
+  let c = CONS[id];
+  if (typeof c === "function") c = c();
+  if (!c || id === "bous" && typeof BQ !== "undefined" && S.bq >= BQ.length) return `<p class="lead">${lead}</p>`;
+  const side = (c.cards ? `<span class="lab">Vous levez</span>${cardsHTML(c.cards)}` : "") + (c.pts ? `<span class="lab">Points</span><span class="pts-chip">${c.pts}</span>` : "");
+  return `${c.intro ? `<p class="intro">${c.intro}</p>` : ""}<div class="consigne ${side ? "" : "solo"}"><h4>Ce que vous devez faire</h4><ol>${c.steps.map((s) => `<li><span>${s}</span></li>`).join("")}${curPlan().solo && c.cards && id !== "prep" ? `<li><span><b>Petit groupe :</b> chacun r\xE9fl\xE9chit seul et l\xE8ve ses propres cartons.</span></li>` : ""}</ol>${side ? `<div class="cons-side">${side}</div>` : ""}</div>`;
+}
+const DEFAULT_TEAMS = ["Les T\xEAtes de gondole", "Les Promos", "Les Facings", "Les Caddies", "Les Vitrines", "Les \xC9tiquettes"];
+function plan(n) {
+  n = Math.max(2, Math.min(30, Math.round(n) || 16));
+  if (n <= 6) return { n, solo: true, t: n, sizes: Array(n).fill(1) };
+  const t = Math.min(6, Math.max(3, Math.round(n / 4)));
+  const b = Math.floor(n / t), e = n % t;
+  return { n, solo: false, t, sizes: Array.from({ length: t }, (_, i) => b + (i < e ? 1 : 0)) };
+}
+function curPlan() {
+  return plan(S.players || 16);
+}
+function sizesText(p) {
+  if (p.solo) return `${p.n} joueurs : chacun joue pour soi`;
+  const u = p.sizes.filter((v, i, a) => a.indexOf(v) === i);
+  return u.length === 1 ? `${p.t} \xE9quipes de ${p.sizes[0]}` : `${p.t} \xE9quipes (${p.sizes.join(", ")} \xE9l\xE8ves)`;
+}
+function setPlayers(n) {
+  const p = plan(n);
+  const was = curPlan();
+  S.players = p.n;
+  const changed = p.t !== S.teams.length || p.solo !== was.solo;
+  if (changed) {
+    S.teams = p.sizes.map((_, i) => {
+      const old = S.teams[i];
+      const keep = old && !(p.solo !== was.solo);
+      return { name: keep ? old.name : p.solo ? "Joueur " + (i + 1) : DEFAULT_TEAMS[i], score: 0 };
+    });
+    S.aw = {};
+    if (S.mems) {
+      S.mems.forEach((m) => {
+        m.turn = 0;
+      });
+    }
+    if (S.mem) {
+      S.mem.turn = 0;
+    }
+  }
+  save();
+  drawBoard();
+  render();
+}
+function playersHTML() {
+  const p = curPlan();
+  return `<div class="players"><div class="pl-l"><span class="lab">Nombre de joueurs aujourd'hui</span><div class="stepper"><button class="btn" data-pl="-1" aria-label="Un joueur de moins">\u2212</button><span class="pl-n">${p.n}</span><button class="btn" data-pl="1" aria-label="Un joueur de plus">+</button></div></div>
+ <div class="pl-r"><span class="lab">Le jeu vous propose</span><p class="pl-plan">${sizesText(p)}</p><p class="note">${p.solo ? "Petit groupe : chaque \xE9l\xE8ve a son propre score et ses cartons." : "Cartons \xE0 imprimer : " + p.t + " jeux."} Changer ce nombre remet les scores \xE0 z\xE9ro.</p></div></div>`;
+}
+function updTeamText() {
+  const p = curPlan();
+  const txt = p.solo ? "Chacun joue pour soi, avec ses propres cartons." : sizesText(p) + ".";
+  document.querySelectorAll(".tsz").forEach((e) => {
+    e.textContent = txt;
+  });
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const d = b.dataset;
+  if (d.go != null) {
+    go(+d.go);
+    return;
+  }
+  if (d.adj) {
+    const [i, p] = d.adj.split("|").map(Number);
+    addPts(i, p);
+    if (p > 0) {
+      const r = b.getBoundingClientRect();
+      burst(r.left + r.width / 2, r.top, 24, COL[i]);
+      ding();
+    }
+    return;
+  }
+  if (d.aw) {
+    const k = d.aw, i = +d.i;
+    if (S.aw[k] != null) {
+      addPts(i, -S.aw[k]);
+      delete S.aw[k];
+    } else {
+      const p = d.pts != null ? +d.pts : 1;
+      if (p <= 0) return;
+      S.aw[k] = p;
+      addPts(i, p);
+      const r = b.getBoundingClientRect();
+      burst(r.left + r.width / 2, r.top + r.height / 2, 40, COL[i]);
+      ding();
+    }
+    save();
+    render();
+    return;
+  }
+  if (d.pl != null) {
+    setPlayers((S.players || 16) + +d.pl);
+    return;
+  }
+  if (d.reveal) {
+    S.rev[d.reveal] = 1;
+    save();
+    render();
+    whoosh();
+    return;
+  }
+  if (d.qnext) {
+    S.idx[d.qnext]++;
+    save();
+    render();
+    return;
+  }
+  if (d.qprev) {
+    S.idx[d.qprev]--;
+    save();
+    render();
+    return;
+  }
+  if (d.timer) {
+    setTimer(+d.timer, true);
+    return;
+  }
+  if (d.wx != null) {
+    S.wx[S.wxMode][+d.wx]++;
+    S.lastWx = +d.wx;
+    save();
+    render();
+    return;
+  }
+  if (d.wxmode) {
+    S.wxMode = d.wxmode;
+    save();
+    render();
+    return;
+  }
+  if (d.delteam != null) {
+    S.teams.splice(+d.delteam, 1);
+    S.aw = {};
+    save();
+    drawBoard();
+    render();
+    return;
+  }
+  if (d.obs != null) return;
+  if (d.mpts) {
+    S.microPts = +d.mpts;
+    save();
+    render();
+    return;
+  }
+  if (d.skill) {
+    S.skills[d.skill] = (S.skills[d.skill] || 0) + 1;
+    save();
+    render();
+    return;
+  }
+  switch (b.id) {
+    case "startgame":
+      S.started = 1;
+      save();
+      $("#splash").hidden = true;
+      $("#rules").hidden = false;
+      ensureAudio();
+      fanfare();
+      burst(innerWidth / 2, innerHeight / 3, 120);
+      break;
+    case "showrules":
+      $("#rules").hidden = false;
+      break;
+    case "rulesgo":
+      $("#rules").hidden = true;
+      S.rulesSeen = 1;
+      save();
+      burst(innerWidth / 2, innerHeight / 3, 60);
+      ding();
+      break;
+    case "home":
+      $("#splash").hidden = false;
+      break;
+    case "addteam":
+      S.teams.push({ name: "\xC9quipe " + (S.teams.length + 1), score: 0 });
+      save();
+      drawBoard();
+      render();
+      break;
+    case "wxundo":
+      if (S.lastWx != null && S.wx[S.wxMode][S.lastWx] > 0) {
+        S.wx[S.wxMode][S.lastWx]--;
+        S.lastWx = null;
+        save();
+        render();
+      }
+      break;
+    case "icedraw": {
+      let n;
+      do {
+        n = Math.floor(Math.random() * ICE.length);
+      } while (n === S.ice && ICE.length > 1);
+      S.ice = n;
+      save();
+      render();
+      break;
+    }
+    case "drawscene": {
+      const left = SCENES.map((_, j) => j).filter((j) => !S.deck.includes(j));
+      if (!left.length) break;
+      const n = left[Math.floor(Math.random() * left.length)];
+      S.deck.push(n);
+      S.scene = n;
+      save();
+      render();
+      setTimer(120);
+      break;
+    }
+    case "drawmicro": {
+      let n;
+      do {
+        n = Math.floor(Math.random() * MICRO.length);
+      } while (n === S.micro && MICRO.length > 1);
+      S.micro = n;
+      S.micN = (S.micN || 0) + 1;
+      save();
+      render();
+      setTimer(30);
+      break;
+    }
+    case "reset":
+      S.confirmReset = 1;
+      render();
+      break;
+    case "resetno":
+      S.confirmReset = 0;
+      render();
+      break;
+    case "resetyes":
+      S = blank();
+      save();
+      drawSteps();
+      drawBoard();
+      render();
+      setTimer(STATIONS[0].min * 60);
+      $("#splash").hidden = false;
+      break;
+  }
+});
+document.addEventListener("change", (e) => {
+  const t = e.target;
+  if (t.dataset.obs != null) {
+    const c = S.scene, j = +t.dataset.obs;
+    S.obs[c] = S.obs[c] || [];
+    if (t.checked) {
+      if (!S.obs[c].includes(j)) S.obs[c].push(j);
+    } else S.obs[c] = S.obs[c].filter((x) => x !== j);
+    save();
+    render();
+  }
+});
+document.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.dataset.team != null) {
+    S.teams[+t.dataset.team].name = t.value || "\xC9quipe " + (+t.dataset.team + 1);
+    save();
+    drawBoard();
+  }
+});
+const cv = $("#fx"), cx = cv.getContext("2d");
+let parts = [], raf = null;
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function fit() {
+  cv.width = innerWidth * devicePixelRatio;
+  cv.height = innerHeight * devicePixelRatio;
+  cx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+addEventListener("resize", fit);
+fit();
+const FXC = ["#FFD23F", "#FF4F8B", "#2ED8F0", "#8BE36B", "#B194FF", "#FF9142"];
+function burst(x, y, n, col) {
+  if (RM) return;
+  for (let k = 0; k < n; k++) {
+    const a = Math.random() * Math.PI * 2, v = 4 + Math.random() * 8;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 5, r: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.4, w: 6 + Math.random() * 7, h: 4 + Math.random() * 5, c: col && Math.random() < 0.5 ? col : FXC[k % FXC.length], l: 90 + Math.random() * 40 });
+  }
+  if (!raf) loop();
+}
+function loop() {
+  cx.clearRect(0, 0, innerWidth, innerHeight);
+  parts = parts.filter((p) => p.l > 0);
+  for (const p of parts) {
+    p.vy += 0.28;
+    p.vx *= 0.985;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.r += p.vr;
+    p.l--;
+    cx.save();
+    cx.globalAlpha = Math.min(1, p.l / 30);
+    cx.translate(p.x, p.y);
+    cx.rotate(p.r);
+    cx.fillStyle = p.c;
+    cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    cx.restore();
+  }
+  raf = parts.length ? requestAnimationFrame(loop) : (cx.clearRect(0, 0, innerWidth, innerHeight), null);
+}
+function ensureAudio() {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === "suspended") ac.resume();
+  } catch (e) {
+  }
+}
+function tone(f, d, len, type, vol) {
+  try {
+    ensureAudio();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type || "sine";
+    o.frequency.value = f;
+    o.connect(g);
+    g.connect(ac.destination);
+    const t = ac.currentTime + d;
+    g.gain.setValueAtTime(vol || 0.18, t);
+    g.gain.exponentialRampToValueAtTime(1e-3, t + len);
+    o.start(t);
+    o.stop(t + len + 0.02);
+  } catch (e) {
+  }
+}
+function ding() {
+  tone(988, 0, 0.15, "triangle");
+  tone(1319, 0.09, 0.3, "triangle");
+}
+function whoosh() {
+  tone(523, 0, 0.12, "square", 0.06);
+  tone(784, 0.08, 0.2, "square", 0.06);
+}
+function tick() {
+  tone(660, 0, 0.06, "square", 0.05);
+}
+function fanfare() {
+  [523, 659, 784, 1047].forEach((f, k) => tone(f, k * 0.12, k === 3 ? 0.5 : 0.18, "triangle", 0.16));
+}
+$("#map").innerHTML = STATIONS.map((x) => `<div class="mtile" style="--c:${x.c}"><span class="e" aria-hidden="true">${x.ic}</span><b>${x.t}</b><em>${x.min} min</em></div>`).join("");
+$("#rulescards").innerHTML = cardsHTML(["VRAI", "FAUX", "A", "B", "C", "D"]);
+function start(data) {
+  var _a2, _b2, _c2;
+  window.__ok = true;
+  S = data && data.S || load() || blank();
+  drawSteps();
+  drawBoard();
+  render();
+  setTimer(STATIONS[S.st].min * 60);
+  $("#splash").hidden = !!S.started;
+  $("#rules").hidden = !(S.started && !S.rulesSeen);
+  (_c2 = (_b2 = (_a2 = window.claude) == null ? void 0 : _a2.hot) == null ? void 0 : _b2.snapshot) == null ? void 0 : _c2.call(_b2, () => ({ S }));
+}
+((_b = (_a = window.claude) == null ? void 0 : _a.hot) == null ? void 0 : _b.ready) ? window.claude.hot.ready(start) : start((_e = (_d = (_c = window.claude) == null ? void 0 : _c.hot) == null ? void 0 : _d.data) != null ? _e : {});
+</script>
+
+</body>
+</html>
